@@ -1,0 +1,32 @@
+26/08/2020 22:30:40 17724 Logging started
+26/08/2020 22:30:40 17724 Already running
+26/08/2020 22:30:40 17724 Logging ended
+26/08/2020 22:31:23 13388 Startbutton
+26/08/2020 22:31:23 13388 Starting Game Starcraft 1.16.1 C:\Program Files\Starcraft\StarCraft.exe
+26/08/2020 22:31:23 13388 BWAPI 4.4.0 Injector [RELEASE] Version  Compatible
+26/08/2020 22:31:23 13388 W-MODE 1.02 Version 1.0.2 Compatible
+26/08/2020 22:31:23 13388 Could not obtain SeDebugPrivilege No todos los privilegios o grupos a los que se hace referencia son asignados al llamador.
+(1300)
+26/08/2020 22:31:26 13388 CreateProcess
+26/08/2020 22:31:26 13388 Call ScSuspended for all active Plugins
+26/08/2020 22:31:26 13388 ApplyPatchSuspended for BWAPI 4.4.0 Injector [RELEASE]
+26/08/2020 22:31:29 13388 ApplyPatchSuspended for W-MODE 1.02
+26/08/2020 22:31:29 13388 ResumeThread
+26/08/2020 22:31:29 13388 WaitForInputIdle
+26/08/2020 22:31:30 13388 Call ScWindowCreated for all active Plugins
+26/08/2020 22:31:30 13388 ApplyPatch for BWAPI 4.4.0 Injector [RELEASE]
+26/08/2020 22:31:30 13388 ApplyPatch for W-MODE 1.02
+26/08/2020 22:31:30 13388 Starting Starcraft completed
+26/08/2020 22:34:23 13388 Finishing
+26/08/2020 22:34:23 13388 Unloading Plugin ICCup
+26/08/2020 22:34:23 13388 Unloading Plugin APMAlert (1.16.1)
+26/08/2020 22:34:24 13388 Unloading Plugin BWAPI 4.4.0 Injector [RELEASE]
+26/08/2020 22:34:24 13388 Unloading Plugin BWAPI 4.4.0 Injector [DEBUG]
+26/08/2020 22:34:24 13388 Unloading Plugin Chaosplugin for 1.16.1
+26/08/2020 22:34:24 13388 Unloading Plugin LatencyChanger for 1.16.1
+26/08/2020 22:34:24 13388 Unloading Plugin RepFix
+26/08/2020 22:34:24 13388 Unloading Plugin RWAPlayer (1.16.1)
+26/08/2020 22:34:24 13388 Unloading Plugin RWARecorder (1.16.1)
+26/08/2020 22:34:24 13388 Unloading Plugin Stormplugin for 1.16.1
+26/08/2020 22:34:24 13388 Unloading Plugin W-MODE 1.02
+26/08/2020 22:34:24 13388 Logging ended
