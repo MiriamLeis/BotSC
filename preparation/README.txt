@@ -31,3 +31,16 @@ Pasos para probar la IA:
 1#Compilar el proyecto ExampleIAModule
 2#Copiar BWAPI/Release/ExampleIAModule.dll en (Directorio de Starcraft)\api-data\AI
 3#Ejecutar el juego
+
+-------------------------------------------------------
+
+Para poder usar el repetidor:
+
+	-Tutorial:
+https://www.youtube.com/watch?v=tl-nansNbsA&ab_channel=DaveChurchill
+
+	-Software:
+https://github.com/davechurchill/StarcraftAITournamentManager#download--compile
+
+	-Crear JAVA Path:
+https://javatutorial.net/set-java-home-windows-10
