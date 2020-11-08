@@ -1,41 +1,53 @@
-from pysc2.agents import base_agent
+import numpy as np
+import pandas as pd
+
 from pysc2.env import sc2_env
-from pysc2.lib import actions, features, units
 from absl import app
-import random
 
-class PyAgent(base_agent.BaseAgent):
-    def step(self, obs):
-        super(PyAgent, self).step(obs)
+step_mul = 8
 
-        return actions.FUNCTIONS.no_op()
+class QLearningTable:
+    def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
+        self.actions = actions  # a list
+        self.lr = learning_rate
+        self.gamma = reward_decay
+        self.epsilon = e_greedy
+        self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
+
+    def choose_action(self, state):
+        self.check_state_exist(state)
+
+        if np.random.uniform() < self.epsilon:
+            state_action = self.q_table.ix[state, :]
+            state_action = state_action.reindex(np.random.permutation(state_action.index))
+            action = state_action.idxmax()
+
+        else:
+            action = np.random.choice(self.actions)
+
+        return action
+
+    def learn(self, state, action, reward, state_):
+        self.check_state_exist(state_)
+        self.check_state_exist(state)
+
+        q_predict = self.q_table.ix[state, action]
+        q_target = reward + self.gamma * self.q_table.ix[state_, :].max()
+
+        self.q_table.ix[state, action] += self.lr * (q_target - q_predict)
+
+    def check_state_exist(self, state):
+        if state not in self.q_table.index:
+            self.q_table.append(pd.Series([0] * len(self.actions), index=self.q_table.colums, name=state))
 
 def main(unused_argv):
-    agent = PyAgent()
-    try:
-        while True:
-            with sc2_env.SC2Env(
-                    map_name="Simple64", # Map
-                    players=[sc2_env.Agent(sc2_env.Race.terran), # Our race
-                             sc2_env.Bot(sc2_env.Race.random, sc2_env.Difficulty.very_easy)], # Our enemy race and difficulty
-                    agent_interface_format=features.AgentInterfaceFormat(
-                            feature_dimensions=features.Dimensions(screen=84, minimap=64), # Screen Dimensions
-                            use_feature_units=True),
-                    step_mul=8,
-                    game_steps_per_episode=0,
-                    visualize=True) as env:
-                agent.setup(env.observation_spec(), env.action_spec())
+    with sc2_env.SC2Env(
+            map_name="MoveToBeacon",
+            step_mul=step_mul,
+            visualize=True) as env:
 
-                timsteps = env.reset()
-                agent.reset()
-                while True:
-                    step_actions = [agent.step(timsteps[0])]
-                    if timsteps[0].last():
-                        break
-                    timsteps = env.step(step_actions)
 
-    except KeyboardInterrupt:
-        pass
+
 
 if __name__ == "__main__":
     app.run(main)
