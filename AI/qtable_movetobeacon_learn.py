@@ -52,11 +52,12 @@ class QTable(object):
         self.actions = actions
         self.epsilon = e_greedy
         self.gamma = reward_decay
-        self.states_list = set()
         self.load_qt = load_qt
         if load_st:
-            temp = self.load_states(load_st)
-            self.states_list = set([tuple(temp[i]) for i in range(len(temp))])
+            self.states_list = self.load_states(load_st)
+            set(self.states_list)
+        else:
+            self.states_list = set()
         
         if load_qt:
             self.q_table = self.load_qtable(load_qt)

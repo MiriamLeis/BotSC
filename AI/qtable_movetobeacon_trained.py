@@ -43,67 +43,27 @@ def get_state(obs):
     marinex, mariney = marinexs.mean(), marineys.mean()
         
     marine_on_beacon = np.min(beaconxs) <= marinex <=  np.max(beaconxs) and np.min(beaconys) <= mariney <=  np.max(beaconys)
-    
+
     return int(marine_on_beacon), [beaconxs, beaconys]
 
 class QTable(object):
-    def __init__(self, actions, lr=0.01, reward_decay=0.9, e_greedy=0.8,load_qt=None, load_st=None):
-        self.lr = lr
+    def __init__(self, actions, load_qt=None, load_st=None):
         self.actions = actions
-        self.epsilon = e_greedy
-        self.gamma = reward_decay
-        self.states_list = set()
         self.load_qt = load_qt
-        if load_st:
-            temp = self.load_states(load_st)
-            self.states_list = set([tuple(temp[i]) for i in range(len(temp))])
+
+        self.states_list = self.load_states(load_st)
+        set(self.states_list)
         
-        if load_qt:
-            self.q_table = self.load_qtable(load_qt)
-        else:
-            self.q_table = np.zeros((0, len(possible_actions))) # crea la tabla Q
+        self.q_table = self.load_qtable(load_qt)
         
     def choose_action(self, state):
-        self.check_state_exist(state)
             
-        if np.random.rand() > self.epsilon:
-            return np.random.choice(self.actions)
-        else:
-            idx = list(self.states_list).index(state)
-            q_values = self.q_table[idx]
-            return int(np.argmax(q_values))
+        idx = list(self.states_list).index(state)
+        q_values = self.q_table[idx]
+        return int(np.argmax(q_values))
     
-    def learn(self, state, action, reward, state_):
-        self.check_state_exist(state_)
-        self.check_state_exist(state)
-
-        state_idx = list(self.states_list).index(state)
-        next_state_idx = list(self.states_list).index(state_)
-
-        q_predict = self.q_table[state_idx, action]
-
-        # almacena la recompensa por:
-        # la accion que ha realizado + lo bueno que es el estado al que te ha llevado
-        q_target = reward + self.gamma * self.q_table[next_state_idx].max()
-
-        # actualizar la recompensa de ese estado con esa accion dependiendo de lo que hubiese antes
-        #self.q_table[state_idx, action] = (1 - self.lr) * q_predict + self.lr * (q_target)
-        self.q_table[state_idx, action] += self.lr * (q_target - q_predict)
-
-    def check_state_exist(self, state):
-        if state not in self.states_list:
-            self.q_table = np.vstack([self.q_table, np.zeros((1, len(possible_actions)))])
-            self.states_list.add(state)
-        
-    def save_qtable(self, filepath):
-        np.save(filepath, self.q_table)
-        
     def load_qtable(self, filepath):
         return np.load(filepath)
-        
-    def save_states(self, filepath):
-        temp = np.array(list(self.states_list))
-        np.save(filepath, temp)
         
     def load_states(self, filepath):
         return np.load(filepath)
@@ -141,7 +101,7 @@ class MoveToBeaconAgent(base_agent.BaseAgent):
             action = -1
             func = actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
             
-        return state, action, func
+        return state, func
 
 def main():
     FLAGS(sys.argv)
@@ -155,29 +115,22 @@ def main():
                         visualize=False,
                         agent_interface_format=AGENT_INTERFACE_FORMAT) as env:
     
-        if FLAGS.start_from_scratch:
-            agent = MoveToBeaconAgent()
-        else:
-            agent = MoveToBeaconAgent(load_qt='moveToBeaconAgent_qtable.npy', load_st='moveToBeaconAgent_states.npy')
+        agent = MoveToBeaconAgent(load_qt='moveToBeaconAgent_qtable.npy', load_st='moveToBeaconAgent_states.npy')
 
         for i in range(FLAGS.max_episodes):
+            num_beacons = 0
             print('Starting episode {}'.format(i))
-            ep_reward = 0
             obs = env.reset()
             for j in range(MAX_STEPS):
-                state, action, func = agent.step(obs[0])
+                state, func = agent.step(obs[0])
                 obs = env.step(actions=[func])
-                if state != -1:
-                    next_state, _ = get_state(obs[0])
-                    reward = obs[0].reward
-                    ep_reward += reward
-                    agent.qtable.learn(state, action, reward, next_state)
-            print('Episode Reward: {}'.format(ep_reward))
+                if state == 1:
+                    num_beacons += 1
+
+            print('Episode Beacons: {}'.format(num_beacons))
             
         if FLAGS.save_replay:
             env.save_replay(MoveToBeaconAgent.__name__)
-        agent.qtable.save_qtable('moveToBeaconAgent_qtable.npy')
-        agent.qtable.save_states('moveToBeaconAgent_states.npy')
 
 if __name__ == "__main__":
     main()
