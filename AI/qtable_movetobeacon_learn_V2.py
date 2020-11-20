@@ -71,8 +71,8 @@ def get_marine_pos(obs):
 def get_state(obs):
     # coge las poscion del marine y del beacon
     ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
-    beaconys, beaconxs = (ai_view == _PLAYER_NEUTRAL).nonzero()
-    marineys, marinexs = (ai_view == _PLAYER_SELF).nonzero()
+    beaconxs, beaconys = (ai_view == _PLAYER_NEUTRAL).nonzero()
+    marinexs, marineys = (ai_view == _PLAYER_SELF).nonzero()
 
 
     if len(marinexs) == 0:
@@ -190,27 +190,35 @@ class MoveToBeaconAgent(base_agent.BaseAgent):
         
     def step(self, obs):
         super(MoveToBeaconAgent, self).step(obs)
-
+        marineNextPosition = [0,0]
         # si podemos mover nuestro ejercito (si podemos mover algo)
         if _MOVE_SCREEN in obs.observation['available_actions']:
             state, dist, marinePos = get_state(obs)
             action = self.qtable.choose_action(state)
             func = actions.FunctionCall(_NO_OP, [])
-            
+
             if  possible_actions[action] == _MOVE_UP:
-                if(marinePos[1] - 1 < 0):
-                    marinePos[1] +=5
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0] - 1, marinePos[1]]])
+                if(marinePos[1] - 2 < 3.5):
+                    marinePos[1] +=2
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1]- 2]])
+                marineNextPosition = [marinePos[0], marinePos[1]- 2]
 
             elif possible_actions[action] == _MOVE_DOWN:
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0] + 1, marinePos[1]]])
+                if(marinePos[1] + 2 > 44.5):
+                    marinePos[1] -=2
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1] + 2]])
+                marineNextPosition = [marinePos[0], marinePos[1] + 2]
 
             elif possible_actions[action] == _MOVE_RIGHT:
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1] + 1]])
+                if(marinePos[0] + 2 > 60.5):
+                    marinePos[0] -=2
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0]+2, marinePos[1]]])
+                marineNextPosition = [marinePos[0]+2, marinePos[1]]
             else:
-                if(marinePos[0] - 1 < 0):
-                    marinePos[0] +=5
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1] - 1]])
+                if(marinePos[0] - 2 < 3.5):
+                    marinePos[0] +=2
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0]-2, marinePos[1]]])
+                marineNextPosition = [marinePos[0]-2, marinePos[1]]
  
         # si no podemos movernos es porque no tenemos nada seleccionado. Seleccionamos nuestro ejercito.
         else:
@@ -219,7 +227,7 @@ class MoveToBeaconAgent(base_agent.BaseAgent):
             dist = -1
             func = actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
             
-        return state, action, func, dist
+        return state, action, func, dist, marineNextPosition
 
 def main():
     FLAGS(sys.argv)
@@ -250,19 +258,27 @@ def main():
 
             while True:
                 marineActualPos = get_marine_pos(obs[0])
-                #if marineNextPosition[0] == marineActualPos[0] and marineNextPosition[1] == marineActualPos[1]:
+                print("ProximaPos",marineNextPosition)
+                print("ActualPos",marineActualPos)
+                if marineNextPosition[0] == marineActualPos[0] and marineNextPosition[1] == marineActualPos[1]:
+                    print("hola")
+                    state, action, func, oldDist, marinePosibleNextPosition = agent.step(obs[0])
 
-                state, action, func, oldDist = agent.step(obs[0])
-                if obs[0].last():
-                    break
-                obs = env.step(actions=[func])
-                if state != -1:
-                    next_state, newDist, _ = get_state(obs[0])
-                    reward = oldDist - newDist
-                    ep_reward += reward
-                    agent.qtable.learn(state, action, reward, next_state)
-                #else:
-                #    obs = env.step(actions=[func])
+                    if obs[0].last():
+                        break
+
+                    obs = env.step(actions=[func])
+                    if state != -1:
+                        marineNextPosition = marinePosibleNextPosition
+                        next_state, newDist, _ = get_state(obs[0])
+                        reward = oldDist - newDist
+                        ep_reward += reward
+                        agent.qtable.learn(state, action, reward, next_state)
+                elif _MOVE_SCREEN in obs[0].observation['available_actions']:
+                        print("hola2")
+                        obs = env.step(actions=[func])
+                else:
+                    obs = env.step(actions=[actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])])
 
             print('Episode Reward: {}'.format(ep_reward))
             
