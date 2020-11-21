@@ -69,7 +69,7 @@ def get_marine_pos(obs):
 
 def get_beacon_pos(obs):
     ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
-    beaconxs, beaconys = (ai_view == _PLAYER_NEUTRAL).nonzero()
+    beaconys, beaconxs = (ai_view == _PLAYER_NEUTRAL).nonzero()
     if len(beaconxs) == 0:
         beaconxs = np.array([0])
     if len(beaconys) == 0:
@@ -81,7 +81,7 @@ def get_beacon_pos(obs):
 def get_state(obs):
     # coge las poscion del marine y del beacon
     ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
-    beaconxs, beaconys = (ai_view == _PLAYER_NEUTRAL).nonzero()
+    beaconys, beaconxs = (ai_view == _PLAYER_NEUTRAL).nonzero()
     marineys, marinexs = (ai_view == _PLAYER_SELF).nonzero()
 
 

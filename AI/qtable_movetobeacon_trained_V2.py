@@ -68,7 +68,7 @@ def get_marine_pos(obs):
 
 def get_beacon_pos(obs):
     ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
-    beaconxs, beaconys = (ai_view == _PLAYER_NEUTRAL).nonzero()
+    beaconys, beaconxs = (ai_view == _PLAYER_NEUTRAL).nonzero()
     if len(beaconxs) == 0:
         beaconxs = np.array([0])
     if len(beaconys) == 0:
@@ -80,7 +80,7 @@ def get_beacon_pos(obs):
 def get_state(obs):
     # coge las poscion del marine y del beacon
     ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
-    beaconxs, beaconys = (ai_view == _PLAYER_NEUTRAL).nonzero()
+    beaconys, beaconxs = (ai_view == _PLAYER_NEUTRAL).nonzero()
     marineys, marinexs = (ai_view == _PLAYER_SELF).nonzero()
 
 
@@ -149,12 +149,9 @@ class QTable(object):
     def choose_action(self, state):
         self.check_state_exist(state)
             
-        if np.random.rand() > self.epsilon:
-            return np.random.choice(self.actions)
-        else:
-            idx = list(self.states_list).index(state)
-            q_values = self.q_table[idx]
-            return int(np.argmax(q_values))
+        idx = list(self.states_list).index(state)
+        q_values = self.q_table[idx]
+        return int(np.argmax(q_values))
 
 
     def check_state_exist(self, state):
@@ -256,6 +253,11 @@ def main():
 
                     state, action, func, oldDist, marinePosibleNextPosition = agent.step(obs[0])
                     marineNextPosition = marinePosibleNextPosition
+                    print("Estado:", state)
+                    print("Accion:", action)
+                    print("Proxima Posicion:", marineNextPosition)
+                    print("Proxima Actual:",  get_marine_pos(obs[0]))
+                    print("Proxima Beacon:",  get_beacon_pos(obs[0]))
 
 
                 elif _MOVE_SCREEN in obs[0].observation['available_actions']:
