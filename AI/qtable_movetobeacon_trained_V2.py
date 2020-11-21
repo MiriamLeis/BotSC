@@ -36,6 +36,7 @@ possible_actions = [
     _MOVE_LEFT
 ]
 
+_MOVE_VAL = 3.5
 
 def ang(lineA, lineB):
     # Get nicer vector form
@@ -64,15 +65,14 @@ def get_marine_pos(obs):
     if len(marineys) == 0:
         marineys = np.array([0])
     marinex, mariney = marinexs.mean(), marineys.mean()
+
     return marinex, mariney
 
 def get_beacon_pos(obs):
     ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
     beaconys, beaconxs = (ai_view == _PLAYER_NEUTRAL).nonzero()
-    if len(beaconxs) == 0:
-        beaconxs = np.array([0])
-    if len(beaconys) == 0:
-        beaconys = np.array([0])
+
+
     beaconx, beacony = beaconxs.mean(), beaconys.mean()
     return beaconx, beacony
 
@@ -91,8 +91,6 @@ def get_state(obs):
 
     marinex, mariney = marinexs.mean(), marineys.mean()
     beaconx, beacony = beaconxs.mean(), beaconys.mean()
-
-
 
     direction = [beaconx-marinex, beacony - mariney]
     dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
@@ -183,28 +181,30 @@ class MoveToBeaconAgent(base_agent.BaseAgent):
             action = self.qtable.choose_action(state)
             func = actions.FunctionCall(_NO_OP, [])
 
+            beacon = get_beacon_pos(obs)
+
             if  possible_actions[action] == _MOVE_UP:
-                if(marinePos[1] - 3 < 3.5):
-                    marinePos[1] +=3
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1]- 3]])
-                marineNextPosition = [marinePos[0], marinePos[1]- 3]
+                if(marinePos[1] - _MOVE_VAL < 3.5):
+                    marinePos[1] +=_MOVE_VAL
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1]- _MOVE_VAL]])
+                marineNextPosition = [marinePos[0], marinePos[1]- _MOVE_VAL]
 
             elif possible_actions[action] == _MOVE_DOWN:
-                if(marinePos[1] + 3 > 44.5):
-                    marinePos[1] -=3
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1] + 3]])
-                marineNextPosition = [marinePos[0], marinePos[1] + 3]
+                if(marinePos[1] + _MOVE_VAL > 44.5):
+                    marinePos[1] -=_MOVE_VAL
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0], marinePos[1] + _MOVE_VAL]])
+                marineNextPosition = [marinePos[0], marinePos[1] + _MOVE_VAL]
 
             elif possible_actions[action] == _MOVE_RIGHT:
-                if(marinePos[0] + 3 > 60.5):
-                    marinePos[0] -=3
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0]+3, marinePos[1]]])
-                marineNextPosition = [marinePos[0]+3, marinePos[1]]
+                if(marinePos[0] + _MOVE_VAL > 60.5):
+                    marinePos[0] -=_MOVE_VAL
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0]+_MOVE_VAL, marinePos[1]]])
+                marineNextPosition = [marinePos[0]+_MOVE_VAL, marinePos[1]]
             else:
-                if(marinePos[0] - 3 < 3.5):
-                    marinePos[0] +=3
-                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0]-3, marinePos[1]]])
-                marineNextPosition = [marinePos[0]-3, marinePos[1]]
+                if(marinePos[0] - _MOVE_VAL < 3.5):
+                    marinePos[0] +=_MOVE_VAL
+                func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinePos[0]-_MOVE_VAL, marinePos[1]]])
+                marineNextPosition = [marinePos[0]-_MOVE_VAL, marinePos[1]]
  
         # si no podemos movernos es porque no tenemos nada seleccionado. Seleccionamos nuestro ejercito.
         else:
@@ -218,7 +218,7 @@ class MoveToBeaconAgent(base_agent.BaseAgent):
 
 def main():
     FLAGS(sys.argv)
-    MAX_STEPS = 2000
+    MAX_STEPS = 1900
     AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
             feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16))
 
@@ -229,7 +229,7 @@ def main():
                         step_mul= 1) as env:
     
 
-        agent = MoveToBeaconAgent(load_qt='moveToBeaconAgent_qtable_V2.npy', load_st='moveToBeaconAgent_states_V2.npy')
+        agent = MoveToBeaconAgent(load_qt='moveToBeaconAgent_qtable_V2_2.npy', load_st='moveToBeaconAgent_states_V2_2.npy')
         agent.qtable.print_QTable()
         for i in range(FLAGS.max_episodes):
             print('Starting episode {}'.format(i))
@@ -247,23 +247,30 @@ def main():
             for j in range(MAX_STEPS):
                 marineActualPos = get_marine_pos(obs[0])
 
-                if (marineNextPosition[0] <= marineActualPos[0] + 0.5 and marineNextPosition[0] >= marineActualPos[0] - 0.5 and marineNextPosition[1] <= marineActualPos[1] + 0.5 and marineNextPosition[1] >= marineActualPos[1] - 0.5) or (marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0):
+                if (marineNextPosition[0] <= marineActualPos[0] + 0.5 and marineNextPosition[0] >= marineActualPos[0] - 0.5 and marineNextPosition[1] <= marineActualPos[1] + 0.5 and marineNextPosition[1] >= marineActualPos[1] - 0.5):
 
                     obs = env.step(actions=[func])
 
                     state, action, func, oldDist, marinePosibleNextPosition = agent.step(obs[0])
                     marineNextPosition = marinePosibleNextPosition
-                    print("Estado:", state)
-                    print("Accion:", action)
-                    print("Proxima Posicion:", marineNextPosition)
-                    print("Proxima Actual:",  get_marine_pos(obs[0]))
-                    print("Proxima Beacon:",  get_beacon_pos(obs[0]))
+                    #print("Estado:", state)
+                    #print("Accion:", action)
+                    #print("Proxima Posicion:", marineNextPosition)
+                    #print("Posicion Actual:",  get_marine_pos(obs[0]))
+                    #print("Posicion Beacon:",  get_beacon_pos(obs[0]))
 
 
                 elif _MOVE_SCREEN in obs[0].observation['available_actions']:
-
+                    if marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0:
+                        print("error")
+                        beacon = get_beacon_pos(obs[0])
+                        marineNextPosition = [beacon[0], beacon[1]]     
+                        obs = env.step(actions=[actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [beacon[0], beacon[1]]])])
+                    else:
+                        marineNextPosition = [marineActualPos[0], marineActualPos[1]]    
                         obs = env.step(actions=[func])
                 else:
+
                     obs = env.step(actions=[actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])])
 
             print('Episode Reward: {}'.format(ep_reward))
