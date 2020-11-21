@@ -10,7 +10,6 @@ from absl import flags
 
 FLAGS = flags.FLAGS
 flags.DEFINE_boolean("save_replay", False, "If you want to save replay")
-flags.DEFINE_boolean("start_from_scratch", True, "If you want to continue with an existing Q-table")
 flags.DEFINE_integer("max_episodes", 5, "Number of episodes")
 
 _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
@@ -129,7 +128,7 @@ def get_state(obs):
     return state, dist, [marinex, mariney]
 
 class QTable(object):
-    def __init__(self, actions, lr=0.5, reward_decay=0.95, e_greedy=0.1,load_qt=None, load_st=None):
+    def __init__(self, actions, lr=0.5, reward_decay=0.95, e_greedy=1.0,load_qt=None, load_st=None):
         self.lr = lr
         self.actions = actions
         self.epsilon = e_greedy
@@ -156,38 +155,15 @@ class QTable(object):
             idx = list(self.states_list).index(state)
             q_values = self.q_table[idx]
             return int(np.argmax(q_values))
-    
-    def learn(self, state, action, reward, state_):
-        self.check_state_exist(state_)
-        self.check_state_exist(state)
 
-        state_idx = list(self.states_list).index(state)
-        next_state_idx = list(self.states_list).index(state_)
-
-        q_predict = self.q_table[state_idx, action]
-
-        # almacena la recompensa por:
-        # la accion que ha realizado + lo bueno que es el estado al que te ha llevado
-        q_target = reward + self.gamma * self.q_table[next_state_idx].max()
-
-        # actualizar la recompensa de ese estado con esa accion dependiendo de lo que hubiese antes
-        #self.q_table[state_idx, action] = (1 - self.lr) * q_predict + self.lr * (q_target)
-        self.q_table[state_idx, action] += self.lr * (q_target - q_predict)
 
     def check_state_exist(self, state):
         if state not in self.states_list:
             self.q_table = np.vstack([self.q_table, np.zeros((1, len(possible_actions)))])
             self.states_list.add(state)
         
-    def save_qtable(self, filepath):
-        np.save(filepath, self.q_table)
-        
     def load_qtable(self, filepath):
-        return np.load(filepath)
-        
-    def save_states(self, filepath):
-        temp = np.array(list(self.states_list))
-        np.save(filepath, temp)
+        return np.load(filepath)     
         
     def load_states(self, filepath):
         return np.load(filepath)
@@ -255,11 +231,9 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
     
-        if FLAGS.start_from_scratch:
-            agent = MoveToBeaconAgent()
-        else:
-            agent = MoveToBeaconAgent(load_qt='moveToBeaconAgent_qtable_V2.npy', load_st='moveToBeaconAgent_states_V2.npy')
 
+        agent = MoveToBeaconAgent(load_qt='moveToBeaconAgent_qtable_V2.npy', load_st='moveToBeaconAgent_states_V2.npy')
+        agent.qtable.print_QTable()
         for i in range(FLAGS.max_episodes):
             print('Starting episode {}'.format(i))
             ep_reward = 0
@@ -278,30 +252,11 @@ def main():
 
                 if (marineNextPosition[0] <= marineActualPos[0] + 0.5 and marineNextPosition[0] >= marineActualPos[0] - 0.5 and marineNextPosition[1] <= marineActualPos[1] + 0.5 and marineNextPosition[1] >= marineActualPos[1] - 0.5) or (marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0):
 
-
-
-
                     obs = env.step(actions=[func])
-
-                    if state != -1:
-
-                        next_state, newDist, _ = get_state(obs[0])
-                        reward = oldDist - newDist
-
-                        #print("Recompensa:", reward)
-                        #print("==========================", reward)
-                        ep_reward += reward
-                        agent.qtable.learn(state, action, reward, next_state)
-
-
 
                     state, action, func, oldDist, marinePosibleNextPosition = agent.step(obs[0])
                     marineNextPosition = marinePosibleNextPosition
-                    #print("Estado:", state)
-                    #print("Accion:", action)
-                    #print("Proxima Posicion:", marineNextPosition)
-                    #print("Proxima Actual:",  get_marine_pos(obs[0]))
-                    #print("Proxima Beacon:",  get_beacon_pos(obs[0]))
+
 
                 elif _MOVE_SCREEN in obs[0].observation['available_actions']:
 
@@ -313,9 +268,7 @@ def main():
             
         if FLAGS.save_replay:
             env.save_replay(MoveToBeaconAgent.__name__)
-        agent.qtable.save_qtable('moveToBeaconAgent_qtable_V2.npy')
-        agent.qtable.save_states('moveToBeaconAgent_states_V2.npy')
-        agent.qtable.print_QTable()
+
 
 if __name__ == "__main__":
     main()
