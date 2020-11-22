@@ -76,7 +76,7 @@ def get_beacon_pos(obs):
     if len(beaconys) == 0:
         beaconys = np.array([0])
     beaconx, beacony = beaconxs.mean(), beaconys.mean()
-    return beaconx, beacony
+    return [beaconx, beacony]
 
 # define el estado
 def get_state(obs):
@@ -130,12 +130,13 @@ def get_state(obs):
     return state, dist, [marinex, mariney]
 
 class QTable(object):
-    def __init__(self, actions, lr=0.5, reward_decay=0.95, e_greedy=0.1,load_qt=None, load_st=None):
+    def __init__(self, actions, episodes,lr=0.2, reward_decay=0.95, e_greedy=0.1,load_qt=None, load_st=None ):
         self.lr = lr
         self.actions = actions
         self.epsilon = e_greedy
         self.gamma = reward_decay
         self.load_qt = load_qt
+        self.MaxEpisodes = episodes
         if load_st:
             self.states_list = self.load_states(load_st)
             set(self.states_list)
@@ -195,12 +196,15 @@ class QTable(object):
 
     def print_QTable(self):
         print(self.q_table)
+
+    def set_actual_episode(self, episode):
+        self.epsilon = episode/self.MaxEpisodes
     
 class MoveToBeaconAgent(base_agent.BaseAgent):
-    def __init__(self, load_qt=None, load_st=None):
+    def __init__(self, episodes,load_qt=None, load_st=None):
         super(MoveToBeaconAgent, self).__init__()
 
-        self.qtable = QTable(possible_actions, load_qt=load_qt, load_st=load_st)
+        self.qtable = QTable(possible_actions, episodes,load_qt=load_qt, load_st=load_st)
         
     def step(self, obs):
         super(MoveToBeaconAgent, self).step(obs)
@@ -257,37 +261,46 @@ def main():
                         step_mul= 1) as env:
     
         if FLAGS.start_from_scratch:
-            agent = MoveToBeaconAgent()
+            agent = MoveToBeaconAgent(FLAGS.max_episodes -5)
         else:
-            agent = MoveToBeaconAgent(load_qt='moveToBeaconAgent_qtable_V2.npy', load_st='moveToBeaconAgent_states_V2.npy')
+            agent = MoveToBeaconAgent(FLAGS.max_episodes- 5, load_qt='moveToBeaconAgent_qtable_V2.npy', load_st='moveToBeaconAgent_states_V2.npy')
 
         for i in range(FLAGS.max_episodes):
             print('Starting episode {}'.format(i))
             ep_reward = 0
             obs = env.reset()
             print(i, FLAGS.max_episodes)
+
             marineActualPos = get_marine_pos(obs[0])
+            beaconActualPos = get_beacon_pos(obs[0])
 
             marineNextPosition = np.copy(marineActualPos)
             func = actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
             state = -1
             oldDist = 0
             action = -1
+            agent.qtable.set_actual_episode(i+1)
+            agent.qtable.print_QTable()
+
+            error = False
 
             for j in range(MAX_STEPS):
                 marineActualPos = get_marine_pos(obs[0])
 
-                if (marineNextPosition[0] <= marineActualPos[0] + 0.5 and marineNextPosition[0] >= marineActualPos[0] - 0.5 and marineNextPosition[1] <= marineActualPos[1] + 0.5 and marineNextPosition[1] >= marineActualPos[1] - 0.5) or (marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0):
-
-
-
+                if (marineNextPosition[0] <= marineActualPos[0] + 1.0 and marineNextPosition[0] >= marineActualPos[0] - 1.0  and marineNextPosition[1] <= marineActualPos[1] + 1.0  and marineNextPosition[1] >= marineActualPos[1] - 1.0):
 
                     obs = env.step(actions=[func])
 
                     if state != -1:
 
                         next_state, newDist, _ = get_state(obs[0])
+                        beaconNewPos = get_beacon_pos(obs[0])
+
                         reward = oldDist - newDist
+                        if beaconActualPos[0] != beaconNewPos[0] or beaconActualPos[1] != beaconNewPos[1]:
+                            reward = 5
+                            beaconActualPos[0] = beaconNewPos[0]
+                            beaconActualPos[1] = beaconNewPos[1]
 
                         #print("Recompensa:", reward)
                         #print("==========================", reward)
@@ -305,14 +318,20 @@ def main():
                     #print("Proxima Beacon:",  get_beacon_pos(obs[0]))
                 elif _MOVE_SCREEN in obs[0].observation['available_actions']:
                     if marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0:
-                        print("error")
                         beacon = get_beacon_pos(obs[0])
                         marineNextPosition = [beacon[0], beacon[1]]     
                         obs = env.step(actions=[actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [beacon[0], beacon[1]]])])
-                    else:
-                        marineNextPosition = [marineActualPos[0], marineActualPos[1]]    
+                        error = True
+                    elif error:
+                        #print("Proxima Actual:",  get_marine_pos(obs[0]))
+                        #print("Proxima Posicion:", marineNextPosition)
+                        marineNextPosition = [marineActualPos[0], marineActualPos[1]]   
+                        error = False
+                    else: 
                         obs = env.step(actions=[func])
+
                 else:
+
                     obs = env.step(actions=[actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])])
 
             print('Episode Reward: {}'.format(ep_reward))
