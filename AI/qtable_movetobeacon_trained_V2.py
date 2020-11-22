@@ -244,6 +244,8 @@ def main():
             oldDist = 0
             action = -1
 
+            error = False
+
             for j in range(MAX_STEPS):
                 marineActualPos = get_marine_pos(obs[0])
 
@@ -261,13 +263,17 @@ def main():
 
 
                 elif _MOVE_SCREEN in obs[0].observation['available_actions']:
-                    if marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0:
-                        print("error")
+                   if marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0:
                         beacon = get_beacon_pos(obs[0])
                         marineNextPosition = [beacon[0], beacon[1]]     
                         obs = env.step(actions=[actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [beacon[0], beacon[1]]])])
-                    else:
-                        marineNextPosition = [marineActualPos[0], marineActualPos[1]]    
+                        error = True
+                    elif error:
+                        #print("Proxima Actual:",  get_marine_pos(obs[0]))
+                        #print("Proxima Posicion:", marineNextPosition)
+                        marineNextPosition = [marineActualPos[0], marineActualPos[1]]   
+                        error = False
+                    else: 
                         obs = env.step(actions=[func])
                 else:
 
