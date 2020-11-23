@@ -6,7 +6,7 @@ from pysc2.env import sc2_env
 from pysc2 import maps
 from absl import flags
 
-import mtb_agent
+import mtb_agent4Directions as mtb_agent
 from qtable import QTable
 
 FLAGS = flags.FLAGS
