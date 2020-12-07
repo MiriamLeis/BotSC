@@ -40,11 +40,11 @@ class QTable(object):
 
         # almacena la recompensa por:
         # la accion que ha realizado + lo bueno que es el estado al que te ha llevado
-        q_target = reward + self.gamma * self.q_table[next_state_idx].max()
+        q_target = reward + (self.gamma * self.q_table[next_state_idx].max())
 
         # actualizar la recompensa de ese estado con esa accion dependiendo de lo que hubiese antes
-        #self.q_table[state_idx, action] = (1 - self.lr) * q_predict + self.lr * (q_target)
-        self.q_table[state_idx, action] += self.lr * (q_target - q_predict)
+        self.q_table[state_idx, action] = ((1 - self.lr) * q_predict) + (self.lr * (q_target))
+        #self.q_table[state_idx, action] += self.lr * (q_target - q_predict)
 
     def check_state_exist(self, state):
         if state not in self.states_list:
