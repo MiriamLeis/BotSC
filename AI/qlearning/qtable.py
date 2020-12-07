@@ -1,7 +1,7 @@
 import numpy as np
 
 class QTable(object):
-    def __init__(self, actions, episodes,lr=0.2, reward_decay=0.95, e_greedy=0.1,load_qt=None, load_st=None ):
+    def __init__(self, actions, episodes,lr=0.2, reward_decay=0.95, e_greedy=0.9,load_qt=None, load_st=None ):
         self.lr = lr
         self.actions = actions
         self.epsilon = e_greedy
@@ -22,7 +22,7 @@ class QTable(object):
     def choose_action(self, state):
         self.check_state_exist(state)
             
-        if np.random.rand() > self.epsilon:
+        if np.random.rand() < self.epsilon:
             return np.random.choice(self.actions)
         else:
             idx = list(self.states_list).index(state)
@@ -68,4 +68,4 @@ class QTable(object):
         print(self.q_table)
 
     def set_actual_episode(self, episode):
-        self.epsilon = episode/self.MaxEpisodes
+        self.epsilon = 1 - (episode/self.MaxEpisodes)
