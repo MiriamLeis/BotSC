@@ -9,11 +9,16 @@ from pysc2.lib import features
 from pysc2.env import sc2_env
 from pysc2 import maps
 
+import sys
 import numpy as np
 import tensorflow as tf
+from absl import flags
 import time
 import random
 import math
+
+FLAGS = flags.FLAGS
+FLAGS(sys.argv)
 
  # python ignore _
 DISCOUNT = 0.99
@@ -53,6 +58,20 @@ _SELECT_ALL = [0]
 _NOT_QUEUED = [0]
 _QUEUED = [1]
 
+MOVE_VAL = 3.5
+
+UP = 0
+DOWN = 1
+RIGHT = 2
+LEFT = 3
+
+possible_actions = [
+    UP,
+    DOWN,
+    RIGHT,
+    LEFT
+]
+
 
 ###############################
 
@@ -63,7 +82,7 @@ class ModifiedTensorBoard(TensorBoard):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.step = 1
-        self.writer = tf.summary.FileWriter(self.log_dir)
+        #self.writer = tf.compat.v1.summary.FileWriter(logdir=self.log_dir)
 
     # Overriding this method to stop creating default log writer
     def set_model(self, model):
@@ -85,14 +104,17 @@ class ModifiedTensorBoard(TensorBoard):
 
     # Custom method for saving own metrics
     # Creates writer, writes custom metrics and closes writer
-    def update_stats(self, **stats):
-        self._write_logs(stats, self.step)
+    #def update_stats(self, **stats):
+     #   self._write_logs(stats, self.step)
 
 
 ###############################
 
 class DQNAgent:
     def __init__(self):
+        #actions
+        self.num_actions = 4
+
         # main model
         # model that we are not fitting every step
         # gets trained every step
@@ -109,9 +131,6 @@ class DQNAgent:
         # track internally when we are ready to update target_model
         self.tensorboard = ModifiedTensorBoard(log_dir=f"logs/{MODEL_NAME}-{int(time.time())}")
         self.target_update_counter = 0
-
-        #actions
-        self.num_actions = 4
 
     def create_model(self):
         model = Sequential()
@@ -265,11 +284,43 @@ def get_state(obs):
     return state
 
 def check_done(obs, beacon_actual_pos, last_step):
-    beacon_new_pos = get_beacon_pos(obs[0])
+    beacon_new_pos = get_beacon_pos(obs)
     # if we get beacon or it's the last step
     if beacon_actual_pos[0] != beacon_new_pos[0] or beacon_actual_pos[1] != beacon_new_pos[1] or last_step:
         return True, [beacon_new_pos[0], beacon_new_pos[1]]
     return False, [beacon_actual_pos[0], beacon_actual_pos[1]]
+
+def get_action(obs, action):
+    marinex, mariney = get_marine_pos(obs)
+    func = actions.FunctionCall(_NO_OP, [])
+    
+    if  possible_actions[action] == UP:
+        if(mariney - MOVE_VAL < 3.5):
+            mariney += MOVE_VAL
+        func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex, mariney - MOVE_VAL]])
+        marineNextPosition = [marinex, mariney - MOVE_VAL]
+
+    elif possible_actions[action] == DOWN:
+        if(mariney + MOVE_VAL > 44.5):
+            mariney -= MOVE_VAL
+
+        func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex, mariney + MOVE_VAL]])
+        marineNextPosition = [marinex, mariney + MOVE_VAL]
+
+    elif possible_actions[action] == RIGHT:
+        if(marinex + MOVE_VAL > 60.5):
+            marinex -= MOVE_VAL
+        func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex + MOVE_VAL, mariney]])
+        marineNextPosition = [marinex + MOVE_VAL, mariney]
+
+    else:
+        if(marinex - MOVE_VAL < 3.5):
+            marinex += MOVE_VAL
+
+        func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex - MOVE_VAL, mariney]])
+        marineNextPosition = [marinex - MOVE_VAL, mariney]
+
+    return func
 
 def main():
     # Create environment
@@ -289,7 +340,7 @@ def main():
 
         random.seed(1)
         np.random.seed(1)
-        tf.set_random_seed(1)
+        tf.random.set_seed(1)
 
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             obs = env.reset()
@@ -300,7 +351,7 @@ def main():
             step = 1
 
             beacon_actual_pos = get_beacon_pos(obs[0])
-            current_state = get_state(obs)
+            current_state = get_state(obs[0])
 
             # select marine
             action = actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
@@ -316,12 +367,12 @@ def main():
                     # get random action
                     action = np.random.randint(0, agent.num_actions)
 
-                obs = env.step(actions=[action])
+                obs = env.step(actions=[get_action(obs[0], action)])
 
                 # get new state
-                new_state = get_state(obs)
+                new_state = get_state(obs[0])
 
-                done, beacon_actual_pos = check_done(obs, beacon_actual_pos, s==STEPS-1)
+                done, beacon_actual_pos = check_done(obs[0], beacon_actual_pos, s==STEPS-1)
 
                 # get reward of our action
                 reward = obs[0].reward
