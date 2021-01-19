@@ -9,14 +9,22 @@ from pysc2.lib import features
 from pysc2.env import sc2_env
 from pysc2 import maps
 
-import sys
 import numpy as np
 import tensorflow as tf
-from absl import flags
-import time
+
+"""
+    fix error 
+    "Could not load dynamic library 'cupti64_110.dll'; dlerror: cupti64_110.dll not found"
+"""
+config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
+sess = tf.compat.v1.Session(config=config)
+
+import sys
 import random
 import math
+import time
 
+from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
