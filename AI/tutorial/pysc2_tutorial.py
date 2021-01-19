@@ -1,4 +1,4 @@
-from keras.models import Sequential
+from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input
 from keras.callbacks import TensorBoard
 from keras.optimizers import Adam
@@ -133,19 +133,16 @@ class DQNAgent:
         self.target_update_counter = 0
 
     def create_model(self):
-        model = Sequential()
-        model.add(Input(shape=(1,)))
-        model.add(Activation("relu"))
-        model.add(Dropout(0.2))
-        
-        model.add(Dense(256))
-        model.add(Activation("relu"))
-        model.add(Dropout(0.2))
+        # layers
+        inputs = Input(shape=(1,))
+        x = Dense(64, activation='relu')(inputs)
+        outputs = Dense(self.num_actions, activation='linear')(x)
 
-        model.add(Dense(64))
-
-        model.add(Dense(self.num_actions, activation="linear"))
+        # creation
+        model = Model(inputs=inputs, outputs=outputs)
         model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+    
+        model.summary()
 
         return model
 
@@ -385,7 +382,7 @@ def main():
                 current_state = new_state
                 step += 1
 
-                if done:
+                if False:
                     # Append episode reward to a list and log stats (every given number of episodes)
                     ep_rewards.append(episode_reward)
                     if not episode % AGGREGATE_STATS_EVERY or episode == 1:
