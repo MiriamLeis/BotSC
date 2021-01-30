@@ -2,24 +2,25 @@ from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input
 from keras.callbacks import TensorBoard
 from keras.optimizers import Adam
+import keras
+import tensorflow as tf
+
+
+config = tf.compat.v1.ConfigProto( device_count = {'GPU': 1 , 'CPU': 1} ) 
+sess = tf.compat.v1.Session(config=config) 
+tf.compat.v1.keras.backend.set_session(sess)
+
 from collections import deque
 from tqdm import tqdm
 from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.env import sc2_env
 from pysc2 import maps
-
-import numpy as np
-import tensorflow as tf
-
-"""
-    fix error 
-    "Could not load dynamic library 'cupti64_110.dll'; dlerror: cupti64_110.dll not found"
-"""
-config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
-sess = tf.compat.v1.Session(config=config)
-
 import sys
+import numpy as np
+
+from absl import flags
+import time
 import random
 import math
 import time
@@ -143,8 +144,7 @@ class DQNAgent:
     def create_model(self):
         # layers
         inputs = Input(shape=(1,))
-        x = Dense(64, activation='relu')(inputs)
-        outputs = Dense(self.num_actions, activation='linear')(x)
+        outputs = Dense(self.num_actions, activation='linear')(inputs)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)
@@ -338,6 +338,11 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
+        print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+        sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(log_device_placement=True))
+        print(sess)
+
+        #tf.compat.v1.keras.backend._get_available_gpus()
         agent = DQNAgent()
 
         epsilon = 1
