@@ -1,12 +1,13 @@
 from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input
-from keras.callbacks import TensorBoard
 from keras.optimizers import Adam
 import keras
 import tensorflow as tf
 
-
-config = tf.compat.v1.ConfigProto( device_count = {'GPU': 1 , 'CPU': 1} ) 
+"""
+    Use GPU
+"""
+config = tf.compat.v1.ConfigProto( device_count = {'GPU': 1 , 'CPU': 4} ) 
 sess = tf.compat.v1.Session(config=config) 
 tf.compat.v1.keras.backend.set_session(sess)
 
@@ -32,15 +33,14 @@ FLAGS(sys.argv)
  # python ignore _
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1_000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
-MODEL_NAME = '1_256_64_4'
+MODEL_NAME = '1_64_4'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
 
 # Environment settings
-EPISODES = 20_000
+EPISODES = 200
 STEPS = 1_900
 
 # Exploration settings
@@ -81,42 +81,6 @@ possible_actions = [
     LEFT
 ]
 
-
-###############################
-
-# Own Tensorboard class
-class ModifiedTensorBoard(TensorBoard):
-
-    # Overriding init to set initial step and writer (we want one log file for all .fit() calls)
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.step = 1
-        #self.writer = tf.compat.v1.summary.FileWriter(logdir=self.log_dir)
-
-    # Overriding this method to stop creating default log writer
-    def set_model(self, model):
-        pass
-
-    # Overrided, saves logs with our step number
-    # (otherwise every .fit() will start writing from 0th step)
-    def on_epoch_end(self, epoch, logs=None):
-        self.update_stats(**logs)
-
-    # Overrided
-    # We train for one batch only, no need to save anything at epoch end
-    def on_batch_end(self, batch, logs=None):
-        pass
-
-    # Overrided, so won't close writer
-    def on_train_end(self, _):
-        pass
-
-    # Custom method for saving own metrics
-    # Creates writer, writes custom metrics and closes writer
-    #def update_stats(self, **stats):
-     #   self._write_logs(stats, self.step)
-
-
 ###############################
 
 class DQNAgent:
@@ -138,13 +102,13 @@ class DQNAgent:
         self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
 
         # track internally when we are ready to update target_model
-        self.tensorboard = ModifiedTensorBoard(log_dir=f"logs/{MODEL_NAME}-{int(time.time())}")
         self.target_update_counter = 0
 
     def create_model(self):
         # layers
         inputs = Input(shape=(1,))
-        outputs = Dense(self.num_actions, activation='linear')(inputs)
+        x = Dense(64, activation='relu')(inputs)
+        outputs = Dense(self.num_actions, activation='relu')(x)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)
@@ -160,13 +124,14 @@ class DQNAgent:
 
     def get_qs(self, state):
         # return last layer of neural network
-        return self.model.predict(np.array(state).reshape(-1, *state.shape))[0]
+        stateArray = np.array(state)
+        return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]
 
     def train(self, terminal_state, step):
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
 
-        minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+        minibatch = random.sample(self.replay_memory, MIN_REPLAY_MEMORY_SIZE)
 
         # / 255 cuz we want to normalize in this case... but this is just for images.
         # so this is cuz we want values from 0 to 1
@@ -196,8 +161,10 @@ class DQNAgent:
             y.append(current_qs)
 
         # we do fit only if terminal_state, otherwise we fit None
-        self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, 
-            shuffle=False, callbacks=[self.tensorboard] if terminal_state else None)
+        self.model.fit(np.array(X), np.array(y), batch_size=MIN_REPLAY_MEMORY_SIZE, verbose=0, 
+            shuffle=False)
+
+        self.replay_memory.clear()
 
         #updating to determinate if we want to update target_model yet
         if terminal_state: 
@@ -327,6 +294,13 @@ def get_action(obs, action):
 
     return func
 
+def get_reward(obs, oldDist):
+    marinex, mariney = get_marine_pos(obs)
+    beaconx, beacony = get_beacon_pos(obs)
+
+    newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
+    return oldDist - newDist
+
 def main():
     # Create environment
     AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
@@ -352,15 +326,18 @@ def main():
         np.random.seed(1)
         tf.random.set_seed(1)
 
+        ep = 0
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
+            # decay epsilon
+            epsilon = 1 - (ep/(EPISODES))
+            print(epsilon)
+
             obs = env.reset()
-
-            agent.tensorboard.step = episode
-
-            episode_reward = 0
             step = 1
 
             beacon_actual_pos = get_beacon_pos(obs[0])
+            oldDist = 0
+
             current_state = get_state(obs[0])
 
             # select marine
@@ -369,49 +346,49 @@ def main():
 
             done = False
 
+            actualTime = 2.0
+            timeForAction = 0.75
+            lastTime = ((obs[0]).observation["game_loop"] / 16)
+        
+            ep += 1
+
             for s in range(STEPS):
-                if np.random.random() > epsilon:
-                    # choose action
-                    action = np.argmax(agent.get_qs(current_state))
-                else:
-                    # get random action
-                    action = np.random.randint(0, agent.num_actions)
+                # get deltaTime
+                realTime = ((obs[0]).observation["game_loop"] / 16)
+                delta = realTime - lastTime
+                lastTime = realTime
+                
+                if actualTime >= timeForAction:
+                    if np.random.random() > epsilon:
+                        # choose action
+                        action = np.argmax(agent.get_qs(current_state))
+                    else:
+                        # get random action
+                        action = np.random.randint(0, agent.num_actions)
 
                 obs = env.step(actions=[get_action(obs[0], action)])
+                
+                if actualTime >= timeForAction:
+                    # get new state
+                    new_state = get_state(obs[0])
 
-                # get new state
-                new_state = get_state(obs[0])
+                    done, beacon_actual_pos = check_done(obs[0], beacon_actual_pos, s==STEPS-1)
 
-                done, beacon_actual_pos = check_done(obs[0], beacon_actual_pos, s==STEPS-1)
+                    # get reward of our action
+                    reward = get_reward(obs[0], oldDist)
 
-                # get reward of our action
-                reward = obs[0].reward
-                episode_reward += reward
+                    # Every step we update replay memory and train main network
+                    agent.update_replay_memory((current_state, action, reward, new_state, done))
+                    agent.train(done, step)
 
-                # Every step we update replay memory and train main network
-                agent.update_replay_memory((current_state, action, reward, new_state, done))
-                agent.train(done, step)
+                    current_state = new_state
 
-                current_state = new_state
+                    actualTime = 0
+                    
+                else:
+                    actualTime += delta
+                
                 step += 1
-
-                if False:
-                    # Append episode reward to a list and log stats (every given number of episodes)
-                    ep_rewards.append(episode_reward)
-                    if not episode % AGGREGATE_STATS_EVERY or episode == 1:
-                        average_reward = sum(ep_rewards[-AGGREGATE_STATS_EVERY:]) / len(ep_rewards[-AGGREGATE_STATS_EVERY:])
-                        min_reward = min(ep_rewards[-AGGREGATE_STATS_EVERY:])
-                        max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])
-                        agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward)
-
-                        # Save model, but only when min reward is greater or equal a set value
-                        if min_reward >= MIN_REWARD:
-                            agent.model.save(f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
-
-                    # Decay epsilon
-                    if epsilon > MIN_EPSILON:
-                        epsilon *= EPSILON_DECAY
-                        epsilon = max(MIN_EPSILON, epsilon)
             
 
 main()
