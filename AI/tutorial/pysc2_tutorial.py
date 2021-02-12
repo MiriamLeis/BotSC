@@ -30,17 +30,17 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
- # python ignore _
+ # python ignor
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
+MIN_REPLAY_MEMORY_SIZE = 10  # Minimum number of steps in a memory to start training
+UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 MODEL_NAME = '1_64_4'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
 
 # Environment settings
-EPISODES = 200
+EPISODES = 50
 STEPS = 1_900
 
 # Exploration settings
@@ -107,12 +107,12 @@ class DQNAgent:
     def create_model(self):
         # layers
         inputs = Input(shape=(1,))
-        x = Dense(64, activation='relu')(inputs)
-        outputs = Dense(self.num_actions, activation='relu')(x)
+        x = Dense(25, activation='relu')(inputs)
+        outputs = Dense(self.num_actions, activation='softmax')(x)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)
-        model.compile(loss="mse", optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate=0.1), metrics=['accuracy'])
     
         model.summary()
 
@@ -131,14 +131,12 @@ class DQNAgent:
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
 
-        minibatch = random.sample(self.replay_memory, MIN_REPLAY_MEMORY_SIZE)
-
         # / 255 cuz we want to normalize in this case... but this is just for images.
         # so this is cuz we want values from 0 to 1
-        current_states = np.array([transition[0] for transition in minibatch])
+        current_states = np.array([transition[0] for transition in self.replay_memory])
         current_qs_list = self.model.predict(current_states)
 
-        new_current_states = np.array([transition[3] for transition in minibatch])
+        new_current_states = np.array([transition[3] for transition in self.replay_memory])
         future_qs_list = self.target_model.predict(new_current_states)
 
         X = [] # feature sets   /  images
@@ -147,7 +145,7 @@ class DQNAgent:
         # current_states get from index 0 so current_state has to be in 0 position
         # same with new_current_state
         ## ALGORITHM
-        for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
+        for index, (current_state, action, reward, new_current_state, done) in enumerate(self.replay_memory):
             if not done:
                 max_future_q = np.max(future_qs_list[index])
                 new_q = reward + DISCOUNT * max_future_q
@@ -161,18 +159,20 @@ class DQNAgent:
             y.append(current_qs)
 
         # we do fit only if terminal_state, otherwise we fit None
-        self.model.fit(np.array(X), np.array(y), batch_size=MIN_REPLAY_MEMORY_SIZE, verbose=0, 
+        self.model.fit(np.array(X), np.array(y), batch_size=MIN_REPLAY_MEMORY_SIZE, verbose=2, 
             shuffle=False)
 
         self.replay_memory.clear()
 
         #updating to determinate if we want to update target_model yet
-        if terminal_state: 
-            self.target_update_counter += 1
+        
+        self.target_update_counter += 1
 
         if self.target_update_counter > UPDATE_TARGET_EVERY:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
+
+
 
 ###############################
 
@@ -295,11 +295,14 @@ def get_action(obs, action):
     return func
 
 def get_reward(obs, oldDist):
+    return oldDist - get_dist(obs)
+
+def get_dist(obs):
     marinex, mariney = get_marine_pos(obs)
     beaconx, beacony = get_beacon_pos(obs)
 
     newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
-    return oldDist - newDist
+    return newDist
 
 def main():
     # Create environment
@@ -336,13 +339,15 @@ def main():
             step = 1
 
             beacon_actual_pos = get_beacon_pos(obs[0])
-            oldDist = 0
+            oldDist = get_dist(obs[0])
 
             current_state = get_state(obs[0])
 
             # select marine
-            action = actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
-            obs = env.step(actions=[action])
+            func = actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL])
+            obs = env.step(actions=[func])
+
+            action = 0
 
             done = False
 
@@ -359,17 +364,7 @@ def main():
                 lastTime = realTime
                 
                 if actualTime >= timeForAction:
-                    if np.random.random() > epsilon:
-                        # choose action
-                        action = np.argmax(agent.get_qs(current_state))
-                    else:
-                        # get random action
-                        action = np.random.randint(0, agent.num_actions)
-
-                obs = env.step(actions=[get_action(obs[0], action)])
-                
-                if actualTime >= timeForAction:
-                    # get new state
+                   # get new state
                     new_state = get_state(obs[0])
 
                     done, beacon_actual_pos = check_done(obs[0], beacon_actual_pos, s==STEPS-1)
@@ -377,16 +372,31 @@ def main():
                     # get reward of our action
                     reward = get_reward(obs[0], oldDist)
 
+                    oldDist = get_dist(obs[0])
+
                     # Every step we update replay memory and train main network
                     agent.update_replay_memory((current_state, action, reward, new_state, done))
                     agent.train(done, step)
 
                     current_state = new_state
 
+                    if np.random.random() > epsilon:
+                        # choose action
+
+                        casos = agent.get_qs(current_state)
+                        action = np.argmax(casos)
+                        print("Estado : ", current_state)
+                        print("Acciones : ", casos)
+                    else:
+                        # get random action
+                        action = np.random.randint(0, agent.num_actions)
+
+                    func = get_action(obs[0], action)
                     actualTime = 0
-                    
                 else:
                     actualTime += delta
+
+                obs = env.step(actions=[func])
                 
                 step += 1
             
