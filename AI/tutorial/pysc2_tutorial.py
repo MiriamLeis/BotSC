@@ -33,14 +33,14 @@ FLAGS(sys.argv)
  # python ignor
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 10  # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+MIN_REPLAY_MEMORY_SIZE = 50  # Minimum number of steps in a memory to start training
+UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 MODEL_NAME = '1_64_4'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
 
 # Environment settings
-EPISODES = 50
+EPISODES = 30
 STEPS = 1_900
 
 # Exploration settings
@@ -106,7 +106,7 @@ class DQNAgent:
 
     def create_model(self):
         # layers
-        inputs = Input(shape=(1,))
+        inputs = Input(shape=(8,))
         x = Dense(25, activation='relu')(inputs)
         outputs = Dense(self.num_actions, activation='softmax')(x)
 
@@ -115,7 +115,7 @@ class DQNAgent:
         model.compile(loss="mse", optimizer=Adam(learning_rate=0.1), metrics=['accuracy'])
     
         model.summary()
-
+        print(model.get_weights())
         return model
 
     def update_replay_memory(self, transition):
@@ -237,21 +237,21 @@ def get_state(obs):
 
     state = -1
     if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-        state = 0
+        state = [1,0,0,0,0,0,0,0]
     elif angleD >= 22.5 and angleD < 67.5:
-        state = 1
+        state = [0,1,0,0,0,0,0,0]
     elif angleD >= 67.5 and angleD < 112.5:
-        state = 2
+        state = [0,0,1,0,0,0,0,0]
     elif angleD >= 112.5 and angleD < 157.5:
-        state = 3
+        state = [0,0,0,1,0,0,0,0]
     elif angleD >= 157.5 and angleD < 202.5:
-        state = 4
+        state = [0,0,0,0,1,0,0,0]
     elif angleD >= 202.5 and angleD < 247.5:
-        state = 5
+        state = [0,0,0,0,0,1,0,0]
     elif angleD >= 247.5 and angleD < 292.5:
-        state = 6
+        state = [0,0,0,0,0,0,1,0]
     elif angleD >= 292.5 and angleD < 337.5:
-        state = 7
+        state = [0,0,0,0,0,0,0,1]
 
     return state
 
@@ -332,7 +332,7 @@ def main():
         ep = 0
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES))
+            epsilon = 1 - (ep/(EPISODES - 10))
             print(epsilon)
 
             obs = env.reset()
@@ -371,6 +371,10 @@ def main():
 
                     # get reward of our action
                     reward = get_reward(obs[0], oldDist)
+                    if reward < 0:
+                        reward = 0
+                    if reward > 1:
+                        reward = 1
 
                     oldDist = get_dist(obs[0])
 
