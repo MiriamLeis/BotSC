@@ -7,7 +7,7 @@ from keras.layers import Dense, Dropout, Activation, Flatten, Input
 from keras.optimizers import Adam
 from collections import deque
 
-MODEL_NAME = '1_64_4'
+MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
     def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=5):
