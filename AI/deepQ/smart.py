@@ -39,8 +39,8 @@ def main():
                                         discount=class_agent.DISCOUNT,
                                         rep_mem_size=class_agent.REPLAY_MEMORY_SIZE,
                                         min_rep_mem_size=class_agent.MIN_REPLAY_MEMORY_SIZE,
-                                        update_time=class_agent.UPDATE_TARGET_EVERY,
-                                        load=False)
+                                        update_time=class_agent.UPDATE_TARGET_EVERY, load =True)
+        dq_agent.loadModel('beaconModel.h5')
 
         epsilon = 1
         ep_rewards = [-200]
@@ -52,7 +52,6 @@ def main():
         ep = 0
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - 10))
 
             obs = env.reset()
             step = 1
@@ -61,60 +60,37 @@ def main():
             current_state = agent.get_state(obs[0])
 
             obs = env.step(actions=[func])
-
-            done = False
-
-            actualTime = 2.0
-            timeForAction = 0.75
-            lastTime = ((obs[0]).observation["game_loop"] / 16)
         
             ep += 1
+
+            actualTime = 2.0
+            timeForAction = 0.5
+            lastTime = ((obs[0]).observation["game_loop"] / 16)
 
             for s in range(STEPS):
                 # get deltaTime
                 realTime = ((obs[0]).observation["game_loop"] / 16)
                 delta = realTime - lastTime
                 lastTime = realTime
-                
                 if actualTime >= timeForAction:
-                   # get new state
+                    # get new state
                     new_state = agent.get_state(obs[0])
-
-                    done = agent.check_done(obs[0], STEPS-1)
-
-                    # get reward of our action
-                    reward = agent.get_reward(obs[0])
-                    if reward < 0:
-                        reward = 0
-                    if reward > 1:
-                        reward = 1
-
-                    agent.update(obs[0])
-
-                    # Every step we update replay memory and train main network
-                    dq_agent.update_replay_memory((current_state, action, reward, new_state, done))
-                    dq_agent.train(done, step)
 
                     current_state = new_state
 
-                    if np.random.random() > epsilon:
-                        # choose action
-                        casos = dq_agent.get_qs(current_state)
-                        action = np.argmax(casos)
-                    else:
-                        # get random action
-                        action = np.random.randint(0, dq_agent.num_actions)
+
+                    casos = dq_agent.get_qs(current_state)
+                    action = np.argmax(casos)
 
                     func = agent.get_action(obs[0], action)
                     actualTime = 0
-
                 else:
                     actualTime += delta
 
+
                 obs = env.step(actions=[func])
-                
+                    
                 step += 1
-        dq_agent.saveModel('beaconModel.h5')
             
 
 main()

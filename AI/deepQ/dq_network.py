@@ -10,7 +10,7 @@ from collections import deque
 MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=5):
+    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=5, load = False):
         #parameters
         self.num_actions = num_actions
         self.num_states = num_states
@@ -19,23 +19,26 @@ class DQNAgent:
         self.min_rep_mem_size = min_rep_mem_size
         self.update_time = update_time
 
-        # main model
-        # model that we are not fitting every step
-        # gets trained every step
-        self.model = self.create_model()
+        if not load:
 
-        # target model
-        # this is what we .predict against every step
-        self.target_model = self.create_model()
-        self.target_model.set_weights(self.model.get_weights()) # do it again after a while
+            # main model
+            # model that we are not fitting every step
+            # gets trained every step
+            self.model = self.create_model()
 
-        # deque -> array or list 
-        self.replay_memory = deque(maxlen=self.rep_mem_size)
+            # target model
+            # this is what we .predict against every step
+            self.target_model = self.create_model()
+            self.target_model.set_weights(self.model.get_weights()) # do it again after a while
 
-        # track internally when we are ready to update target_model
-        self.target_update_counter = 0
+            # deque -> array or list 
+            self.replay_memory = deque(maxlen=self.rep_mem_size)
+
+            # track internally when we are ready to update target_model
+            self.target_update_counter = 0
 
     def create_model(self):
+        
         # layers
         inputs = Input(shape=(self.num_states,))
         x = Dense(25, activation='relu')(inputs)
@@ -101,3 +104,8 @@ class DQNAgent:
         if self.target_update_counter > self.update_time:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
+            
+    def saveModel(self, filepath):
+        keras.models.save_model(self.model, filepath)
+    def loadModel(self, filepath):
+        self.model = keras.models.load_model(filepath)
