@@ -18,7 +18,7 @@ import dq_network
 import agents.movetobeacon as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 20
+EPISODES = 30
 STEPS = 1_900
 
 
@@ -102,6 +102,8 @@ def main():
                         # choose action
                         casos = dq_agent.get_qs(current_state)
                         action = np.argmax(casos)
+                        print("Estado : ", current_state)
+                        print("Acciones : ", casos)
                     else:
                         # get random action
                         action = np.random.randint(0, dq_agent.num_actions)

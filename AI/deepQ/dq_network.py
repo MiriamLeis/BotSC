@@ -1,6 +1,7 @@
 import keras
 import tensorflow as tf
 import numpy as np
+import random
 
 from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input
@@ -10,13 +11,15 @@ from collections import deque
 MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=5, load = False):
+    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=5, minibatch_size=25, load = False):
         #parameters
         self.num_actions = num_actions
         self.num_states = num_states
         self.discount = discount
         self.rep_mem_size = rep_mem_size
         self.min_rep_mem_size = min_rep_mem_size
+        self.min_rep_mem_total = self.min_rep_mem_size
+        self.minibatch_size = minibatch_size
         self.update_time = update_time
 
         if not load:
@@ -42,7 +45,7 @@ class DQNAgent:
         # layers
         inputs = Input(shape=(self.num_states,))
         x = Dense(25, activation='relu')(inputs)
-        outputs = Dense(self.num_actions, activation='softmax')(x)
+        outputs = Dense(self.num_actions)(x)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)
@@ -61,15 +64,19 @@ class DQNAgent:
         return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]
 
     def train(self, terminal_state, step):
-        if len(self.replay_memory) < self.min_rep_mem_size:
+        if len(self.replay_memory) < self.min_rep_mem_total:
             return
+
+        self.min_rep_mem_total += self.min_rep_mem_size
+
+        minibatch = random.sample(self.replay_memory, self.minibatch_size)
 
         # / 255 cuz we want to normalize in this case... but this is just for images.
         # so this is cuz we want values from 0 to 1
-        current_states = np.array([transition[0] for transition in self.replay_memory])
+        current_states = np.array([transition[0] for transition in minibatch])
         current_qs_list = self.model.predict(current_states)
 
-        new_current_states = np.array([transition[3] for transition in self.replay_memory])
+        new_current_states = np.array([transition[3] for transition in minibatch])
         future_qs_list = self.target_model.predict(new_current_states)
 
         X = [] # feature sets   /  images
@@ -78,7 +85,7 @@ class DQNAgent:
         # current_states get from index 0 so current_state has to be in 0 position
         # same with new_current_state
         ## ALGORITHM
-        for index, (current_state, action, reward, new_current_state, done) in enumerate(self.replay_memory):
+        for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
             if not done:
                 max_future_q = np.max(future_qs_list[index])
                 new_q = reward + self.discount * max_future_q
@@ -95,10 +102,7 @@ class DQNAgent:
         self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=2, 
             shuffle=False)
 
-        self.replay_memory.clear()
-
         #updating to determinate if we want to update target_model yet
-        
         self.target_update_counter += 1
 
         if self.target_update_counter > self.update_time:
