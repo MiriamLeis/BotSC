@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 import numpy as np
 import tensorflow as tf
+import os
 import time
 import random
 
@@ -114,7 +115,8 @@ def main():
                 obs = env.step(actions=[func])
                 
                 step += 1
-        dq_agent.saveModel('beaconModel.h5')
+
+        dq_agent.saveModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
             
 
 main()

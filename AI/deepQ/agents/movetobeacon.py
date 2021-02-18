@@ -14,6 +14,7 @@ UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 # environment values
 
 MAP_NAME = 'MoveToBeacon'
+FILE_NAME = 'beaconModel'
 
 _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
 _PLAYER_SELF = 1

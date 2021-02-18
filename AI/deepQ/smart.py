@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 import numpy as np
 import tensorflow as tf
+import os
 import time
 import random
 
@@ -40,7 +41,8 @@ def main():
                                         rep_mem_size=class_agent.REPLAY_MEMORY_SIZE,
                                         min_rep_mem_size=class_agent.MIN_REPLAY_MEMORY_SIZE,
                                         update_time=class_agent.UPDATE_TARGET_EVERY, load =True)
-        dq_agent.loadModel('beaconModel.h5')
+
+        dq_agent.loadModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
 
         epsilon = 1
         ep_rewards = [-200]
