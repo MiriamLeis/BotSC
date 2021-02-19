@@ -4,6 +4,10 @@ import math
 from pysc2.lib import actions
 from pysc2.lib import features
 
+'''
+    Add these parameters mandatory
+'''
+
 # network values
 
 DISCOUNT = 0.99
@@ -15,6 +19,11 @@ UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 
 MAP_NAME = 'MoveToBeacon'
 FILE_NAME = 'beaconModel'
+
+
+'''
+    -> (end) Add these parameters mandatory
+'''
 
 _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
 _PLAYER_SELF = 1
@@ -41,6 +50,21 @@ possible_actions = [
     _RIGHT,
     _LEFT
 ]
+
+
+'''
+    Agent class must have this methods:
+
+        class Agent:
+            def preprare()
+            def update()
+            def get_num_actions()
+            def get_num_states()
+            def get_state()
+            def get_action()
+            def get_reward()
+            def check_done()
+'''
 
 class Agent:
     '''
@@ -133,6 +157,12 @@ class Agent:
         return False
 
     '''
+        Return reward
+    '''
+    def get_reward(self, obs):
+        return self.oldDist - self.__get_dist(obs)
+
+    '''
         Return function of new action
     '''
     def get_action(self, obs, action):
@@ -166,12 +196,6 @@ class Agent:
             marineNextPosition = [marinex - _MOVE_VAL, mariney]
 
         return func
-
-    '''
-        Return reward
-    '''
-    def get_reward(self, obs):
-        return self.oldDist - self.__get_dist(obs)
     
     '''
         (Private method)
