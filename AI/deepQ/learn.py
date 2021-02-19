@@ -1,5 +1,6 @@
 from pysc2.env import sc2_env
 from pysc2 import maps
+from pysc2.lib import actions
 
 from tqdm import tqdm
 
@@ -15,7 +16,7 @@ FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
 import dq_network
-import agents.movetobeacon as class_agent #change path as needed
+import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
 EPISODES = 30
@@ -25,7 +26,8 @@ STEPS = 1_900
 def main():
     # Create environment
     AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
-            feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16))
+            feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16),
+            use_feature_units=True)
 
     with sc2_env.SC2Env(map_name=maps.get(class_agent.MAP_NAME),
                         players=[sc2_env.Agent(sc2_env.Race.terran)],
@@ -52,6 +54,7 @@ def main():
 
         ep = 0
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
+            print()
             # decay epsilon
             epsilon = 1 - (ep/(EPISODES - 10))
 
@@ -64,14 +67,20 @@ def main():
             obs = env.step(actions=[func])
 
             done = False
+            end = False
 
             actualTime = 2.0
-            timeForAction = 0.75
+            timeForAction = 0.5
             lastTime = ((obs[0]).observation["game_loop"] / 16)
         
             ep += 1
 
             for s in range(STEPS):
+                # leave episode if we ended
+                end = agent.get_end(obs[0])
+                if end:
+                    break
+
                 # get deltaTime
                 realTime = ((obs[0]).observation["game_loop"] / 16)
                 delta = realTime - lastTime
@@ -94,11 +103,11 @@ def main():
 
                     # Every step we update replay memory and train main network
                     dq_agent.update_replay_memory((current_state, action, reward, new_state, done))
-                    dq_agent.train(done, step)
+                    dq_agent.train(step)
 
                     current_state = new_state
 
-                    if np.random.random() > epsilon:
+                    if False and np.random.random() > epsilon:
                         # choose action
                         casos = dq_agent.get_qs(current_state)
                         action = np.argmax(casos)

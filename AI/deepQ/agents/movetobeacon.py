@@ -142,6 +142,11 @@ class Agent:
 
         return state
 
+    '''
+        Return if we ended
+    '''
+    def get_end(self, obs):
+        return False
 
     '''
         Return if current action was done

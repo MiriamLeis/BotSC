@@ -63,7 +63,7 @@ class DQNAgent:
         stateArray = np.array(state)
         return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]
 
-    def train(self, terminal_state, step):
+    def train(self, step):
         if len(self.replay_memory) < self.min_rep_mem_total:
             return
 
@@ -98,7 +98,6 @@ class DQNAgent:
             X.append(current_state)
             y.append(current_qs)
 
-        # we do fit only if terminal_state, otherwise we fit None
         self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=2, 
             shuffle=False)
 
