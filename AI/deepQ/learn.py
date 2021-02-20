@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 30
+EPISODES = 1000
 STEPS = 1_900
 
 
@@ -94,10 +94,6 @@ def main():
 
                     # get reward of our action
                     reward = agent.get_reward(obs[0])
-                    if reward < 0:
-                        reward = 0
-                    if reward > 1:
-                        reward = 1
 
                     agent.update(obs[0])
 
@@ -107,7 +103,7 @@ def main():
 
                     current_state = new_state
 
-                    if False and np.random.random() > epsilon:
+                    if np.random.random() > epsilon:
                         # choose action
                         casos = dq_agent.get_qs(current_state)
                         action = np.argmax(casos)

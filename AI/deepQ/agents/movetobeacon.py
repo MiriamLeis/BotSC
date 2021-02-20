@@ -111,12 +111,9 @@ class Agent:
 
 
         direction = [beaconx-marinex, beacony - mariney]
-        dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
+        np.linalg.norm(direction)
         
         vector_1 = [0, -1]
-
-        np.linalg.norm(direction)
-
         angleD = self.__ang(vector_1, direction)
 
         if direction[0] > 0:

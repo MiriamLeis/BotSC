@@ -83,6 +83,8 @@ class Agent:
         Prepare basic parameters.
     '''
     def prepare(self, obs):
+        self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
+        self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
     '''
@@ -107,20 +109,68 @@ class Agent:
         Return agent state
     '''
     def get_state(self, obs):
-        return 0
+        stalkerx, stalkery = self.__get_stalker_position(obs)
+        zealotx, zealoty = self.__get_zealot_position(obs)
+
+        direction = [zealotx - stalkerx, zealoty - stalkery]
+        np.linalg.norm(direction)
+
+        vector_1 = [0, -1]
+        angleD = self.__ang(vector_1, direction)
+
+        if direction[0] > 0:
+            angleD = 360 - angleD
+
+        state = [0,0,0,0,0,0,0,0]
+        dist = self.__get_dist(obs, [stalkerx, stalkery], [zealotx, zealoty]) / 10
+        if dist > 1: 
+            dist = 1
+
+        if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
+            state[0] = dist
+        elif angleD >= 22.5 and angleD < 67.5:
+            state[1] = dist
+        elif angleD >= 67.5 and angleD < 112.5:
+            state[2] = dist
+        elif angleD >= 112.5 and angleD < 157.5:
+            state[3] = dist
+        elif angleD >= 157.5 and angleD < 202.5:
+            state[4] = dist
+        elif angleD >= 202.5 and angleD < 247.5:
+            state[5] = dist
+        elif angleD >= 247.5 and angleD < 292.5:
+            state[6] = dist
+        elif angleD >= 292.5 and angleD < 337.5:
+            state[7] = dist
+
+        return state
 
     '''
         Return reward
     '''
     def get_reward(self, obs):
-        return 0
+        reward = 0
+
+        actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
+        actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+
+        if actual_enemy_totalHP > self.enemy_totalHP:
+            reward = 10
+        
+        else:
+            reward = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
+        
+        self.enemy_totalHP = actual_enemy_totalHP
+        self.ally_totalHP = actual_ally_totalHP
+
+        return reward
     
     '''
-        Return if we ended
+        Return if we must end this episode
     '''
     def get_end(self, obs):
-        result = self.__get_stalker_position(obs)
-        return result[-1]
+        stalkers = self.__get_group(obs, units.Protoss.Stalker)
+        return not stalkers
 
     '''
         Return if current action was done
@@ -132,53 +182,113 @@ class Agent:
         Return function of new action
     '''
     def get_action(self, obs, action):
-        result = self.__get_stalker_position(obs)
-        stalkerx = result[0] 
-        stalkery = result[1]
-
         func = actions.FunctionCall(self._NO_OP, [])
 
-        # ATTACK ACTION
-        
-        # MOVING ACTION
-        if self._MOVE_SCREEN in obs.observation.available_actions:
-
-            if  self.possible_actions[action] == self._UP:
-                if(stalkery - self._MOVE_VAL < 3.5):
-                    stalkery += self._MOVE_VAL
-                func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx, stalkery - self._MOVE_VAL]])
-                marineNextPosition = [stalkerx, stalkery - self._MOVE_VAL]
-
-            elif self.possible_actions[action] == self._DOWN:
-                if(stalkery + self._MOVE_VAL > 44.5):
-                    stalkery -= self._MOVE_VAL
-
-                func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx, stalkery + self._MOVE_VAL]])
-                marineNextPosition = [stalkerx, stalkery + self._MOVE_VAL]
-
-            elif self.possible_actions[action] == self._RIGHT:
-                if(stalkerx + self._MOVE_VAL > 60.5):
-                    stalkerx -= self._MOVE_VAL
-                func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx + self._MOVE_VAL, stalkery]])
-                marineNextPosition = [stalkerx + self._MOVE_VAL, stalkery]
-
-            else:
-                if(stalkerx - self._MOVE_VAL < 3.5):
-                    stalkerx += self._MOVE_VAL
-
-                func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx - self._MOVE_VAL, stalkery]])
-                marineNextPosition = [stalkerx - self._MOVE_VAL, stalkery]
+        if self.possible_actions[action] == self._ATTACK:
+            # ATTACK ACTION
+            if self._ATTACK_SCREEN in obs.observation.available_actions:
+                zealotx, zealoty = self.__get_zealot_position(obs)
+                func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealotx, zealoty]])
 
         else:
-            func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
+            # MOVING ACTION
+            if self._MOVE_SCREEN in obs.observation.available_actions:
+                stalkerx, stalkery = self.__get_stalker_position(obs)
+
+                if  self.possible_actions[action] == self._UP:
+                    if(stalkery - self._MOVE_VAL < 3.5):
+                        stalkery += self._MOVE_VAL
+                    func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx, stalkery - self._MOVE_VAL]])
+                    marineNextPosition = [stalkerx, stalkery - self._MOVE_VAL]
+
+                elif self.possible_actions[action] == self._DOWN:
+                    if(stalkery + self._MOVE_VAL > 44.5):
+                        stalkery -= self._MOVE_VAL
+
+                    func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx, stalkery + self._MOVE_VAL]])
+                    marineNextPosition = [stalkerx, stalkery + self._MOVE_VAL]
+
+                elif self.possible_actions[action] == self._RIGHT:
+                    if(stalkerx + self._MOVE_VAL > 60.5):
+                        stalkerx -= self._MOVE_VAL
+                    func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx + self._MOVE_VAL, stalkery]])
+                    marineNextPosition = [stalkerx + self._MOVE_VAL, stalkery]
+
+                else:
+                    if(stalkerx - self._MOVE_VAL < 3.5):
+                        stalkerx += self._MOVE_VAL
+
+                    func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [stalkerx - self._MOVE_VAL, stalkery]])
+                    marineNextPosition = [stalkerx - self._MOVE_VAL, stalkery]
+
+            # SELECT ARMY
+            else:
+                func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
         return func
 
+    def __get_group(self, obs, group_type):
+        group = [unit for unit in obs.observation['feature_units'] 
+                    if unit.unit_type == group_type]
+        return group
+
     def __get_stalker_position(self, obs):
-        stalkers = [unit for unit in obs.observation['feature_units'] 
-                    if unit.unit_type == units.Protoss.Stalker]
+        stalkers = self.__get_group(obs, units.Protoss.Stalker)
         if stalkers:
             stalker = random.choice(stalkers)
-            return [stalker.y, stalker.x, False]
+            return stalker.x, stalker.y
         else:
-            return [-1, -1, True]
+            return -1, -1
+
+
+    def __get_zealot_position(self, obs):
+        zealots = self.__get_group(obs, units.Protoss.Zealot)
+        if zealots:
+            # search who has lower hp and lower shield
+            target = zealots[0]
+            for i in range(1, len(zealots)):
+                if zealots[i].health < target.health or (zealots[i].health == target.health and zealots[i].shield < target.shield) :
+                    target = zealots[i]
+                
+            return target.x, target.y
+        else:
+            return -1, -1
+    
+    def __get_group_totalHP(self, obs, group_type):
+        group = self.__get_group(obs, group_type)
+        totalHP = 0
+        for unit in group:
+            totalHP += unit.health
+        return totalHP
+
+    '''
+        (Private method)
+        Return angle formed from two lines
+    '''
+    def __ang(self, lineA, lineB):
+        # Get nicer vector form
+        vA = lineA
+        vB = lineB
+        # Get dot prod
+        dot_prod = np.dot(vA, vB)
+        # Get magnitudes
+        magA = np.dot(vA, vA)**0.5
+        magB = np.dot(vB, vB)**0.5
+        # Get cosine value
+        cos = dot_prod/magA/magB
+        # Get angle in radians and then convert to degrees
+        angle = math.acos(dot_prod/magB/magA)
+        # Basically doing angle <- angle mod 360
+        ang_deg = math.degrees(angle)%360
+
+
+        return ang_deg
+
+    '''
+        (Private method)
+        Return dist from stalker and zealot position
+    '''
+    def __get_dist(self, obs, stalker_position, zealot_position):
+        newDist = math.sqrt(pow(stalker_position[0] - zealot_position[0], 2) + pow(stalker_position[1] - zealot_position[1], 2))
+        return newDist
+

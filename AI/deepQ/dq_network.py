@@ -98,7 +98,7 @@ class DQNAgent:
             X.append(current_state)
             y.append(current_qs)
 
-        self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=2, 
+        self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=0, 
             shuffle=False)
 
         #updating to determinate if we want to update target_model yet
