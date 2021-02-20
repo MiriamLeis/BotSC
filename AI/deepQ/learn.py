@@ -95,7 +95,7 @@ def main():
                     # get reward of our action
                     reward = agent.get_reward(obs[0])
 
-                    agent.update(obs[0])
+                    agent.update(obs[0], delta)
 
                     # Every step we update replay memory and train main network
                     dq_agent.update_replay_memory((current_state, action, reward, new_state, done))

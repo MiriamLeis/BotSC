@@ -87,7 +87,7 @@ class Agent:
     '''
         Update basic values
     '''
-    def update(self, obs):
+    def update(self, obs, delta):
         self.oldDist = self.__get_dist(obs)
     
     '''
