@@ -39,6 +39,10 @@ FILE_NAME = 'zealotsModel'
 
 class Agent:
 
+    '''
+        Useful variables 
+    '''
+
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
     _PLAYER_NEUTRAL = 3

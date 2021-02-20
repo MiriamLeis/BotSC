@@ -22,37 +22,6 @@ FILE_NAME = 'beaconModel'
 
 
 '''
-    -> (end) Add these parameters mandatory
-'''
-
-_PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
-_PLAYER_SELF = 1
-_PLAYER_NEUTRAL = 3
-
-_NO_OP = actions.FUNCTIONS.no_op.id
-_MOVE_SCREEN = actions.FUNCTIONS.Attack_screen.id
-_SELECT_ARMY = actions.FUNCTIONS.select_army.id
-
-_SELECT_ALL = [0]
-_NOT_QUEUED = [0]
-_QUEUED = [1]
-
-_MOVE_VAL = 3.5
-
-_UP = 0
-_DOWN = 1
-_RIGHT = 2
-_LEFT = 3
-
-possible_actions = [
-    _UP,
-    _DOWN,
-    _RIGHT,
-    _LEFT
-]
-
-
-'''
     Agent class must have this methods:
 
         class Agent:
@@ -67,11 +36,42 @@ possible_actions = [
 '''
 
 class Agent:
+
+    '''
+        Useful variables 
+    '''
+
+    _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
+    _PLAYER_SELF = 1
+    _PLAYER_NEUTRAL = 3
+
+    _NO_OP = actions.FUNCTIONS.no_op.id
+    _MOVE_SCREEN = actions.FUNCTIONS.Attack_screen.id
+    _SELECT_ARMY = actions.FUNCTIONS.select_army.id
+
+    _SELECT_ALL = [0]
+    _NOT_QUEUED = [0]
+    _QUEUED = [1]
+
+    _MOVE_VAL = 3.5
+
+    _UP = 0
+    _DOWN = 1
+    _RIGHT = 2
+    _LEFT = 3
+
+    possible_actions = [
+        _UP,
+        _DOWN,
+        _RIGHT,
+        _LEFT
+    ]
+
     '''
         Initialize the agent
     '''
     def __init__(self):
-        self.num_actions = len(possible_actions)
+        self.num_actions = len(self.possible_actions)
         self.num_states = 8
 
     '''
@@ -82,7 +82,7 @@ class Agent:
         self.beacon_actual_pos = self.__get_beacon_pos(obs)
         self.oldDist = self.__get_dist(obs)
 
-        return actions.FunctionCall(_SELECT_ARMY, [_SELECT_ALL]), 0
+        return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
     '''
         Update basic values
@@ -122,23 +122,23 @@ class Agent:
         if direction[0] > 0:
             angleD = 360 - angleD
 
-        state = -1
+        state = [0,0,0,0,0,0,0,0]
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state = [1,0,0,0,0,0,0,0]
+            state[0] = 1
         elif angleD >= 22.5 and angleD < 67.5:
-            state = [0,1,0,0,0,0,0,0]
+            state[1] = 1
         elif angleD >= 67.5 and angleD < 112.5:
-            state = [0,0,1,0,0,0,0,0]
+            state[2] = 1
         elif angleD >= 112.5 and angleD < 157.5:
-            state = [0,0,0,1,0,0,0,0]
+            state[3] = 1
         elif angleD >= 157.5 and angleD < 202.5:
-            state = [0,0,0,0,1,0,0,0]
+            state[4] = 1
         elif angleD >= 202.5 and angleD < 247.5:
-            state = [0,0,0,0,0,1,0,0]
+            state[5] = 1
         elif angleD >= 247.5 and angleD < 292.5:
-            state = [0,0,0,0,0,0,1,0]
+            state[6] = 1
         elif angleD >= 292.5 and angleD < 337.5:
-            state = [0,0,0,0,0,0,0,1]
+            state[7] = 1
 
         return state
 
@@ -172,33 +172,33 @@ class Agent:
     '''
     def get_action(self, obs, action):
         marinex, mariney = self.__get_marine_pos(obs)
-        func = actions.FunctionCall(_NO_OP, [])
+        func = actions.FunctionCall(self._NO_OP, [])
         
-        if  possible_actions[action] == _UP:
-            if(mariney - _MOVE_VAL < 3.5):
-                mariney += _MOVE_VAL
-            func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex, mariney - _MOVE_VAL]])
-            marineNextPosition = [marinex, mariney - _MOVE_VAL]
+        if  self.possible_actions[action] == self._UP:
+            if(mariney - self._MOVE_VAL < 3.5):
+                mariney += self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney - self._MOVE_VAL]])
+            marineNextPosition = [marinex, mariney - self._MOVE_VAL]
 
-        elif possible_actions[action] == _DOWN:
-            if(mariney + _MOVE_VAL > 44.5):
-                mariney -= _MOVE_VAL
+        elif self.possible_actions[action] == self._DOWN:
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -= self._MOVE_VAL
 
-            func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex, mariney + _MOVE_VAL]])
-            marineNextPosition = [marinex, mariney + _MOVE_VAL]
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney + self._MOVE_VAL]])
+            marineNextPosition = [marinex, mariney + self._MOVE_VAL]
 
-        elif possible_actions[action] == _RIGHT:
-            if(marinex + _MOVE_VAL > 60.5):
-                marinex -= _MOVE_VAL
-            func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex + _MOVE_VAL, mariney]])
-            marineNextPosition = [marinex + _MOVE_VAL, mariney]
+        elif self.possible_actions[action] == self._RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex + self._MOVE_VAL, mariney]])
+            marineNextPosition = [marinex + self._MOVE_VAL, mariney]
 
         else:
-            if(marinex - _MOVE_VAL < 3.5):
-                marinex += _MOVE_VAL
+            if(marinex - self._MOVE_VAL < 3.5):
+                marinex += self._MOVE_VAL
 
-            func = actions.FunctionCall(_MOVE_SCREEN, [_NOT_QUEUED, [marinex - _MOVE_VAL, mariney]])
-            marineNextPosition = [marinex - _MOVE_VAL, mariney]
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex - self._MOVE_VAL, mariney]])
+            marineNextPosition = [marinex - self._MOVE_VAL, mariney]
 
         return func
     
@@ -207,8 +207,8 @@ class Agent:
         Return marine position
     '''
     def __get_marine_pos(self, obs):
-        ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
-        marineys, marinexs = (ai_view == _PLAYER_SELF).nonzero()
+        ai_view = obs.observation['feature_screen'][self._PLAYER_RELATIVE]
+        marineys, marinexs = (ai_view == self._PLAYER_SELF).nonzero()
         if len(marinexs) == 0:
             marinexs = np.array([0])
         if len(marineys) == 0:
@@ -221,8 +221,8 @@ class Agent:
         Return beacon position
     '''
     def __get_beacon_pos(self, obs):
-        ai_view = obs.observation['feature_screen'][_PLAYER_RELATIVE]
-        beaconys, beaconxs = (ai_view == _PLAYER_NEUTRAL).nonzero()
+        ai_view = obs.observation['feature_screen'][self._PLAYER_RELATIVE]
+        beaconys, beaconxs = (ai_view == self._PLAYER_NEUTRAL).nonzero()
         if len(beaconxs) == 0:
             beaconxs = np.array([0])
         if len(beaconys) == 0:
