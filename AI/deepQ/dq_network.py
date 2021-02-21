@@ -43,8 +43,9 @@ class DQNAgent:
     def create_model(self):
         
         # layers
-        inputs = Input(shape=(self.num_states, ))
-        x = Dense(25, activation='relu')(inputs)
+        inputs = Input(shape=(self.num_states, 3))
+        x = Flatten()(inputs)  
+        x = Dense(25, activation='relu')(x)
         outputs = Dense(self.num_actions)(x)
 
         # creation

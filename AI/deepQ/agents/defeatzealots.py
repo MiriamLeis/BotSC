@@ -57,6 +57,7 @@ class Agent:
     _QUEUED = [1]
 
     _MOVE_VAL = 3.5
+    _RADIO_VAL = 15
 
     _UP = 0
     _DOWN = 1
@@ -85,6 +86,8 @@ class Agent:
     def prepare(self, obs):
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        self.last_dist = self.__get_dist(self.__get_stalker(obs), self.__get_zealot(obs))
+
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
     '''
@@ -123,8 +126,8 @@ class Agent:
             angleD = 360 - angleD
         
         # check proximity
-        dist = self.__get_dist(obs, stalker, zealot)
-        if dist <= stalker.radius: 
+        dist = self.__get_dist(stalker, zealot)
+        if dist <= self._RADIO_VAL: 
             dist = 1
         else: 
             dist = 0
@@ -162,14 +165,20 @@ class Agent:
     def get_reward(self, obs):
         reward = 0
 
+        # reward for moving
+        dist = self.__get_dist(self.__get_stalker(obs), self.__get_zealot(obs))
+        if dist > self._RADIO_VAL:
+            reward += self.last_dist - dist
+
+        # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
 
         if actual_enemy_totalHP > self.enemy_totalHP:
-            reward = 10
+            reward += 10
         
         else:
-            reward = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
+            reward += (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
         
         self.enemy_totalHP = actual_enemy_totalHP
         self.ally_totalHP = actual_ally_totalHP
@@ -289,7 +298,7 @@ class Agent:
         (Private method)
         Return dist from stalker and zealot position
     '''
-    def __get_dist(self, obs, stalker, zealot):
+    def __get_dist(self, stalker, zealot):
         newDist = math.sqrt(pow(stalker.x - zealot.x, 2) + pow(stalker.y - zealot.y, 2))
         return newDist
 
