@@ -60,16 +60,24 @@ class Agent:
     _RADIO_VAL = 15
 
     _UP = 0
-    _DOWN = 1
-    _RIGHT = 2
-    _LEFT = 3
-    _ATTACK = 4
+    _UP_LEFT = 1
+    _LEFT = 2
+    _DOWN = 3
+    _DOWN_RIGHT = 4
+    _RIGHT = 5
+    _UP_RIGHT = 6
+    _DOWN_LEFT = 7
+    _ATTACK = 8
 
     possible_actions = [
         _UP,
         _DOWN,
         _RIGHT,
         _LEFT,
+        _UP_RIGHT,
+        _UP_LEFT,
+        _DOWN_RIGHT,
+        _DOWN_LEFT,
         _ATTACK
     ]
 
@@ -78,7 +86,7 @@ class Agent:
     '''
     def __init__(self):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 8
+        self.num_states = 10
 
     '''
         Prepare basic parameters.
@@ -125,37 +133,34 @@ class Agent:
         if direction[0] > 0:
             angleD = 360 - angleD
         
-        # check proximity
-        dist = self.__get_dist(stalker, zealot)
-        if dist <= self._RADIO_VAL: 
-            dist = 1
-        else: 
-            dist = 0
-
-        # check if i can shoot
-        can_shoot = 0
-        if stalker.weapon_cooldown == 0:
-            can_shoot = 1
-
         # prepare state
-        state = [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
+        state = [0,0,0,0,0,0,0,0,0,0]
 
+        # check angle
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state[0] = [1, can_shoot, dist]
+            state[0] = 1
         elif angleD >= 22.5 and angleD < 67.5:
-            state[1] = [1, can_shoot, dist]
+            state[1] = 1
         elif angleD >= 67.5 and angleD < 112.5:
-            state[2] = [1, can_shoot, dist]
+            state[2] = 1
         elif angleD >= 112.5 and angleD < 157.5:
-            state[3] = [1, can_shoot, dist]
+            state[3] = 1
         elif angleD >= 157.5 and angleD < 202.5:
-            state[4] = [1, can_shoot, dist]
+            state[4] = 1
         elif angleD >= 202.5 and angleD < 247.5:
-            state[5] = [1, can_shoot, dist]
+            state[5] = 1
         elif angleD >= 247.5 and angleD < 292.5:
-            state[6] = [1, can_shoot, dist]
+            state[6] = 1
         elif angleD >= 292.5 and angleD < 337.5:
-            state[7] = [1, can_shoot, dist]
+            state[7] = 1
+
+        # check cooldown
+        if stalker.weapon_cooldown == 0:
+            state[8] = 1
+        
+        # check dist
+        if self.__get_dist(stalker, zealot) <= self._RADIO_VAL:
+            state[9] = 1
 
         return state
 
@@ -220,20 +225,48 @@ class Agent:
                         stalker.y += self._MOVE_VAL
                     marineNextPosition = [stalker.x, stalker.y - self._MOVE_VAL]
 
+                elif self.possible_actions[action] == self._UP_LEFT:
+                    if(stalker.y - self._MOVE_VAL < 3.5):
+                        stalker.y += self._MOVE_VAL
+                    if(stalker.x - self._MOVE_VAL < 3.5):
+                        stalker.x += self._MOVE_VAL
+                    marineNextPosition = [stalker.x - self._MOVE_VAL, stalker.y - self._MOVE_VAL]
+
+                elif self.possible_actions[action] == self._LEFT:
+                    if(stalker.x - self._MOVE_VAL < 3.5):
+                        stalker.x += self._MOVE_VAL
+                    marineNextPosition = [stalker.x - self._MOVE_VAL, stalker.y]
+
+                elif self.possible_actions[action] == self._DOWN_LEFT:
+                    if(stalker.y + self._MOVE_VAL > 44.5):
+                        stalker.y -= self._MOVE_VAL
+                    if(stalker.x - self._MOVE_VAL < 3.5):
+                        stalker.x += self._MOVE_VAL
+                    marineNextPosition = [stalker.x - self._MOVE_VAL, stalker.y + self._MOVE_VAL]
+
                 elif self.possible_actions[action] == self._DOWN:
                     if(stalker.y + self._MOVE_VAL > 44.5):
                         stalker.y -= self._MOVE_VAL
                     marineNextPosition = [stalker.x, stalker.y + self._MOVE_VAL]
+
+                elif self.possible_actions[action] == self._DOWN_RIGHT:
+                    if(stalker.y + self._MOVE_VAL > 44.5):
+                        stalker.y -= self._MOVE_VAL
+                    if(stalker.x + self._MOVE_VAL > 60.5):
+                        stalker.x -= self._MOVE_VAL
+                    marineNextPosition = [stalker.x + self._MOVE_VAL, stalker.y + self._MOVE_VAL]
 
                 elif self.possible_actions[action] == self._RIGHT:
                     if(stalker.x + self._MOVE_VAL > 60.5):
                         stalker.x -= self._MOVE_VAL
                     marineNextPosition = [stalker.x + self._MOVE_VAL, stalker.y]
 
-                else:
-                    if(stalker.x - self._MOVE_VAL < 3.5):
-                        stalker.x += self._MOVE_VAL
-                    marineNextPosition = [stalker.x - self._MOVE_VAL, stalker.y]
+                elif self.possible_actions[action] == self._UP_RIGHT:
+                    if(stalker.y - self._MOVE_VAL < 3.5):
+                        stalker.y += self._MOVE_VAL
+                    if(stalker.x + self._MOVE_VAL > 60.5):
+                        stalker.x -= self._MOVE_VAL
+                    marineNextPosition = [stalker.x + self._MOVE_VAL, stalker.y - self._MOVE_VAL]
 
                 func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, marineNextPosition])
 
@@ -264,11 +297,16 @@ class Agent:
                 
         return target
 
+    '''
+        (Private method)
+        Return totalHP of a group = (unit health plus unit shield)
+    '''
+
     def __get_group_totalHP(self, obs, group_type):
         group = self.__get_group(obs, group_type)
         totalHP = 0
         for unit in group:
-            totalHP += unit.health
+            totalHP += unit.health + unit.shield
         return totalHP
 
     '''

@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 1000
+EPISODES = 200
 STEPS = 1_900
 
 
@@ -56,7 +56,7 @@ def main():
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             print()
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - 10))
+            epsilon = 1 - (ep/(EPISODES - 50))
 
             obs = env.reset()
             step = 1
