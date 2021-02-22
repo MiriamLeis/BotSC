@@ -173,9 +173,11 @@ class Agent:
         # reward for moving
         stalker = self.__get_stalker(obs)
         dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
-        print(self.last_dist - dist)
-        if (dist > self._RADIO_VAL) and self.__can_shoot(obs, units.Protoss.Stalker) and ((self.last_dist - dist) > 0):
-            reward += 1
+        if (dist > self._RADIO_VAL) and self.__can_shoot(obs, units.Protoss.Stalker):
+            if ((self.last_dist - dist) > 0):
+                reward += 1
+            else: 
+                reward -= 1
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)

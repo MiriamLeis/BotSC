@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 200
+EPISODES = 50
 STEPS = 1_900
 
 
@@ -56,7 +56,7 @@ def main():
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             print()
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - 50))
+            epsilon = 1 - (ep/(EPISODES - 20))
 
             obs = env.reset()
             step = 1
@@ -94,9 +94,7 @@ def main():
 
                     # get reward of our action
                     reward = agent.get_reward(obs[0])
-                    print("Recompensa : ", reward)
-                    print("Estado : ", current_state)
-                    print("Accion : ", action)
+
 
                     agent.update(obs[0], delta)
 
@@ -105,13 +103,14 @@ def main():
                     dq_agent.train(step)
 
                     current_state = new_state
-                    
-                    print("---")
+
 
                     if np.random.random() > epsilon:
                         # choose action
                         casos = dq_agent.get_qs(current_state)
                         action = np.argmax(casos)
+                        print("Estado : ", current_state)
+                        print("Acciones : ", casos)
                     else:
                         # get random action
                         action = np.random.randint(0, dq_agent.num_actions)
