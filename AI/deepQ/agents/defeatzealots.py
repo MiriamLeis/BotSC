@@ -62,22 +62,22 @@ class Agent:
     _UP = 0
     _UP_LEFT = 1
     _LEFT = 2
-    _DOWN = 3
-    _DOWN_RIGHT = 4
-    _RIGHT = 5
-    _UP_RIGHT = 6
-    _DOWN_LEFT = 7
+    _DOWN_LEFT = 3
+    _DOWN = 4
+    _DOWN_RIGHT = 5
+    _RIGHT = 6
+    _UP_RIGHT = 7
     _ATTACK = 8
 
     possible_actions = [
         _UP,
-        _DOWN,
-        _RIGHT,
-        _LEFT,
-        _UP_RIGHT,
         _UP_LEFT,
-        _DOWN_RIGHT,
+        _LEFT,
         _DOWN_LEFT,
+        _DOWN,
+        _DOWN_RIGHT,
+        _RIGHT,
+        _UP_RIGHT,
         _ATTACK
     ]
 
@@ -94,7 +94,7 @@ class Agent:
     def prepare(self, obs):
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
-        self.last_dist = self.__get_dist(self.__get_stalker(obs), self.__get_zealot(obs))
+        self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
@@ -155,11 +155,11 @@ class Agent:
             state[7] = 1
 
         # check cooldown
-        if stalker.weapon_cooldown == 0:
+        if self.__can_shoot(obs, units.Protoss.Stalker):
             state[8] = 1
         
         # check dist
-        if self.__get_dist(stalker, zealot) <= self._RADIO_VAL:
+        if self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot)) <= self._RADIO_VAL:
             state[9] = 1
 
         return state
@@ -171,22 +171,31 @@ class Agent:
         reward = 0
 
         # reward for moving
-        dist = self.__get_dist(self.__get_stalker(obs), self.__get_zealot(obs))
-        if dist > self._RADIO_VAL:
-            reward += self.last_dist - dist
+        stalker = self.__get_stalker(obs)
+        dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
+        print(self.last_dist - dist)
+        if (dist > self._RADIO_VAL) and self.__can_shoot(obs, units.Protoss.Stalker) and ((self.last_dist - dist) > 0):
+            reward += 1
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
 
         if actual_enemy_totalHP > self.enemy_totalHP:
-            reward += 10
+            # you killed everyone
+            reward += 5
         
         else:
-            reward += (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
+            diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
+            if diff > 0:
+                reward += 1
+            elif diff < 0:
+                reward -= 1
         
+        #update values
         self.enemy_totalHP = actual_enemy_totalHP
         self.ally_totalHP = actual_ally_totalHP
+        self.last_dist = dist
 
         return reward
     
@@ -218,57 +227,57 @@ class Agent:
         else:
             # MOVING ACTION
             if self._MOVE_SCREEN in obs.observation.available_actions:
-                stalker = self.__get_stalker(obs)
+                stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
 
                 if  self.possible_actions[action] == self._UP:
-                    if(stalker.y - self._MOVE_VAL < 3.5):
-                        stalker.y += self._MOVE_VAL
-                    marineNextPosition = [stalker.x, stalker.y - self._MOVE_VAL]
+                    if(stalkery - self._MOVE_VAL < 3.5):
+                        stalkery += self._MOVE_VAL
+                    nextPosition = [stalkerx, stalkery - self._MOVE_VAL]
 
                 elif self.possible_actions[action] == self._UP_LEFT:
-                    if(stalker.y - self._MOVE_VAL < 3.5):
-                        stalker.y += self._MOVE_VAL
-                    if(stalker.x - self._MOVE_VAL < 3.5):
-                        stalker.x += self._MOVE_VAL
-                    marineNextPosition = [stalker.x - self._MOVE_VAL, stalker.y - self._MOVE_VAL]
+                    if(stalkery - self._MOVE_VAL < 3.5):
+                        stalkery += self._MOVE_VAL
+                    if(stalkerx - self._MOVE_VAL < 3.5):
+                        stalkerx += self._MOVE_VAL
+                    nextPosition = [stalkerx - self._MOVE_VAL, stalkery - self._MOVE_VAL]
 
                 elif self.possible_actions[action] == self._LEFT:
-                    if(stalker.x - self._MOVE_VAL < 3.5):
-                        stalker.x += self._MOVE_VAL
-                    marineNextPosition = [stalker.x - self._MOVE_VAL, stalker.y]
+                    if(stalkerx - self._MOVE_VAL < 3.5):
+                        stalkerx += self._MOVE_VAL
+                    nextPosition = [stalkerx - self._MOVE_VAL, stalkery]
 
                 elif self.possible_actions[action] == self._DOWN_LEFT:
-                    if(stalker.y + self._MOVE_VAL > 44.5):
-                        stalker.y -= self._MOVE_VAL
-                    if(stalker.x - self._MOVE_VAL < 3.5):
-                        stalker.x += self._MOVE_VAL
-                    marineNextPosition = [stalker.x - self._MOVE_VAL, stalker.y + self._MOVE_VAL]
+                    if(stalkery + self._MOVE_VAL > 44.5):
+                        stalkery -= self._MOVE_VAL
+                    if(stalkerx - self._MOVE_VAL < 3.5):
+                        stalkerx += self._MOVE_VAL
+                    nextPosition = [stalkerx - self._MOVE_VAL, stalkery + self._MOVE_VAL]
 
                 elif self.possible_actions[action] == self._DOWN:
-                    if(stalker.y + self._MOVE_VAL > 44.5):
-                        stalker.y -= self._MOVE_VAL
-                    marineNextPosition = [stalker.x, stalker.y + self._MOVE_VAL]
+                    if(stalkery + self._MOVE_VAL > 44.5):
+                        stalkery -= self._MOVE_VAL
+                    nextPosition = [stalkerx, stalkery + self._MOVE_VAL]
 
                 elif self.possible_actions[action] == self._DOWN_RIGHT:
-                    if(stalker.y + self._MOVE_VAL > 44.5):
-                        stalker.y -= self._MOVE_VAL
-                    if(stalker.x + self._MOVE_VAL > 60.5):
-                        stalker.x -= self._MOVE_VAL
-                    marineNextPosition = [stalker.x + self._MOVE_VAL, stalker.y + self._MOVE_VAL]
+                    if(stalkery + self._MOVE_VAL > 44.5):
+                        stalkery -= self._MOVE_VAL
+                    if(stalkerx + self._MOVE_VAL > 60.5):
+                        stalkerx -= self._MOVE_VAL
+                    nextPosition = [stalkerx + self._MOVE_VAL, stalkery + self._MOVE_VAL]
 
                 elif self.possible_actions[action] == self._RIGHT:
-                    if(stalker.x + self._MOVE_VAL > 60.5):
-                        stalker.x -= self._MOVE_VAL
-                    marineNextPosition = [stalker.x + self._MOVE_VAL, stalker.y]
+                    if(stalkerx + self._MOVE_VAL > 60.5):
+                        stalkerx -= self._MOVE_VAL
+                    nextPosition = [stalkerx + self._MOVE_VAL, stalkery]
 
                 elif self.possible_actions[action] == self._UP_RIGHT:
-                    if(stalker.y - self._MOVE_VAL < 3.5):
-                        stalker.y += self._MOVE_VAL
-                    if(stalker.x + self._MOVE_VAL > 60.5):
-                        stalker.x -= self._MOVE_VAL
-                    marineNextPosition = [stalker.x + self._MOVE_VAL, stalker.y - self._MOVE_VAL]
+                    if(stalkery - self._MOVE_VAL < 3.5):
+                        stalkery += self._MOVE_VAL
+                    if(stalkerx + self._MOVE_VAL > 60.5):
+                        stalkerx -= self._MOVE_VAL
+                    nextPosition = [stalkerx + self._MOVE_VAL, stalkery - self._MOVE_VAL]
 
-                func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, marineNextPosition])
+                func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, nextPosition])
 
             # SELECT ARMY
             else:
@@ -334,9 +343,39 @@ class Agent:
 
     '''
         (Private method)
-        Return dist from stalker and zealot position
+        Return mean position of a group
     '''
-    def __get_dist(self, stalker, zealot):
-        newDist = math.sqrt(pow(stalker.x - zealot.x, 2) + pow(stalker.y - zealot.y, 2))
+    def __get_meangroup_position(self, obs, group_type):
+        group = self.__get_group(obs, group_type)
+
+        unitx = unity = 0
+        for unit in group:
+            unitx += unit.x
+            unity += unit.y
+        
+        unitx /= len(group)
+        unity /= len(group)
+
+        return unitx, unity
+
+    '''
+        (Private method)
+        Return True if group cooldown == 0
+    '''
+    def __can_shoot(self, obs, group_type):
+        group = self.__get_group(obs, group_type)
+
+        for unit in group:
+            if unit.weapon_cooldown != 0:
+                return False
+
+        return True
+
+    '''
+        (Private method)
+        Return dist between A and B
+    '''
+    def __get_dist(self, A, B):
+        newDist = math.sqrt(pow(A[0] - B[0], 2) + pow(A[1] - B[1], 2))
         return newDist
 
