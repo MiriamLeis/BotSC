@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 50
+EPISODES = 200
 STEPS = 1_900
 
 
@@ -43,6 +43,7 @@ def main():
                                         rep_mem_size=class_agent.REPLAY_MEMORY_SIZE,
                                         min_rep_mem_size=class_agent.MIN_REPLAY_MEMORY_SIZE,
                                         update_time=class_agent.UPDATE_TARGET_EVERY,
+                                        hidden_nodes = class_agent.HIDDEN_NODES,
                                         load=False)
 
         epsilon = 1
@@ -56,7 +57,7 @@ def main():
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             print()
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - 20))
+            epsilon = 1 - (ep/(EPISODES - 30))
 
             obs = env.reset()
             step = 1
@@ -70,7 +71,7 @@ def main():
             end = False
 
             actualTime = 2.0
-            timeForAction = 0.5
+            timeForAction = 0.85
             lastTime = ((obs[0]).observation["game_loop"] / 16)
         
             ep += 1
@@ -94,8 +95,7 @@ def main():
 
                     # get reward of our action
                     reward = agent.get_reward(obs[0])
-
-
+                    
                     agent.update(obs[0], delta)
 
                     # Every step we update replay memory and train main network

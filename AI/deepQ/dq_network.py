@@ -2,6 +2,7 @@ import keras
 import tensorflow as tf
 import numpy as np
 import random
+import itertools
 
 from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input
@@ -11,7 +12,7 @@ from collections import deque
 MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=5, minibatch_size=25, load = False):
+    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=100, minibatch_size=25, max_cases=300,hidden_nodes=25,load = False):
         #parameters
         self.num_actions = num_actions
         self.num_states = num_states
@@ -21,7 +22,8 @@ class DQNAgent:
         self.min_rep_mem_total = self.min_rep_mem_size
         self.minibatch_size = minibatch_size
         self.update_time = update_time
-
+        self.max_cases = max_cases
+        self.hidden_nodes = hidden_nodes 
         if not load:
 
             # main model
@@ -44,7 +46,7 @@ class DQNAgent:
         
         # layers
         inputs = Input(shape=(self.num_states,))
-        x = Dense(25, activation='relu')(inputs)
+        x = Dense(self.hidden_nodes, activation='relu')(inputs)
         outputs = Dense(self.num_actions)(x)
 
         # creation
@@ -64,8 +66,11 @@ class DQNAgent:
         return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]
 
     def train(self, step):
+
         if len(self.replay_memory) < self.min_rep_mem_total:
             return
+        if len(self.replay_memory) > self.max_cases:
+            self.replay_memory = deque(itertools.islice(self.replay_memory, self.min_rep_mem_size*2, None))
 
         self.min_rep_mem_total += self.min_rep_mem_size
 

@@ -16,6 +16,7 @@ DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 50  # Minimum number of steps in a memory to start training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
+HIDDEN_NODES = 100
 
 # environment values
 
@@ -56,8 +57,8 @@ class Agent:
     _NOT_QUEUED = [0]
     _QUEUED = [1]
 
-    _MOVE_VAL = 3.5
-    _RADIO_VAL = 15
+    _MOVE_VAL = 5.5
+    _RADIO_VAL = 20
 
     _UP = 0
     _UP_LEFT = 1
@@ -86,7 +87,7 @@ class Agent:
     '''
     def __init__(self):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 10
+        self.num_states = 14
 
     '''
         Prepare basic parameters.
@@ -120,11 +121,11 @@ class Agent:
         Return agent state
     '''
     def get_state(self, obs):
-        stalker = self.__get_stalker(obs)
-        zealot = self.__get_zealot(obs)
+        stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
+        zealotx, zealoty = self.__get_meangroup_position(obs, units.Protoss.Zealot)
 
         # get direction
-        direction = [zealot.x - stalker.x, zealot.y - stalker.y]
+        direction = [zealotx- stalkerx, zealoty- stalkery]
         np.linalg.norm(direction)
 
         vector_1 = [0, -1]
@@ -134,7 +135,7 @@ class Agent:
             angleD = 360 - angleD
         
         # prepare state
-        state = [0,0,0,0,0,0,0,0,0,0]
+        state = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         # check angle
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
@@ -159,9 +160,18 @@ class Agent:
             state[8] = 1
         
         # check dist
-        if self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot)) <= self._RADIO_VAL:
+        if self.__get_dist([stalkerx, stalkery], [zealotx, zealoty]) <= self._RADIO_VAL:
             state[9] = 1
 
+        if (stalkery - self._MOVE_VAL) < 3.5:
+            state[10] = 1
+        if (stalkerx - self._MOVE_VAL) < 3.5:
+            state[11] = 1
+        if (stalkery + self._MOVE_VAL) > 44.5:
+            state[12] = 1
+        if (stalkerx + self._MOVE_VAL) > 60.5:
+            state[13] = 1
+        
         return state
 
     '''
@@ -177,22 +187,17 @@ class Agent:
             if ((self.last_dist - dist) > 0):
                 reward += 1
             else: 
-                reward -= 1
+                reward -= 5
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
 
-        if actual_enemy_totalHP > self.enemy_totalHP:
-            # you killed everyone
-            reward += 5
-        
-        else:
-            diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
-            if diff > 0:
-                reward += 1
-            elif diff < 0:
-                reward -= 1
+        diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
+        if diff > 0:
+            reward += 2
+        elif diff < 0:
+            reward -= 1
         
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
