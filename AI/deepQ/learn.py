@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 200
+EPISODES = 1000
 STEPS = 1_900
 
 
@@ -71,7 +71,7 @@ def main():
             end = False
 
             actualTime = 2.0
-            timeForAction = 0.85
+            timeForAction = 0.5
             lastTime = ((obs[0]).observation["game_loop"] / 16)
         
             ep += 1

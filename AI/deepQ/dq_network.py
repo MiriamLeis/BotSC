@@ -47,7 +47,8 @@ class DQNAgent:
         # layers
         inputs = Input(shape=(self.num_states,))
         x = Dense(self.hidden_nodes, activation='relu')(inputs)
-        outputs = Dense(self.num_actions)(x)
+        x2 = Dense(self.hidden_nodes + 20, activation='relu')(x)
+        outputs = Dense(self.num_actions)(x2)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)

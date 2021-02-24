@@ -57,7 +57,7 @@ class Agent:
     _NOT_QUEUED = [0]
     _QUEUED = [1]
 
-    _MOVE_VAL = 5.5
+    _MOVE_VAL = 8.5
     _RADIO_VAL = 20
 
     _UP = 0
@@ -187,7 +187,12 @@ class Agent:
             if ((self.last_dist - dist) > 0):
                 reward += 1
             else: 
-                reward -= 5
+                reward -= 8
+        if (dist < self._RADIO_VAL) and not self.__can_shoot(obs, units.Protoss.Stalker):
+            if ((self.last_dist - dist) > 0):
+                reward -= 1
+            elif ((self.last_dist - dist) < 0): 
+                reward += 3
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
@@ -195,7 +200,7 @@ class Agent:
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
         if diff > 0:
-            reward += 2
+            reward += 1
         elif diff < 0:
             reward -= 1
         
