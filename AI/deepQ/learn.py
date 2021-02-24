@@ -95,10 +95,10 @@ def main():
 
                     # get reward of our action
                     reward = agent.get_reward(obs[0],current_state[8],current_state[9])
-                    print("Recompensa : ", reward)
+                    """print("Recompensa : ", reward)
                     print("Estado : ", current_state)
                     print("Accion : ", action)
-                    print("---")
+                    print("---")"""
                     agent.update(obs[0], delta)
 
                     # Every step we update replay memory and train main network
@@ -112,6 +112,8 @@ def main():
                         # choose action
                         casos = dq_agent.get_qs(current_state)
                         action = np.argmax(casos)
+                        print("Estado : ", current_state)
+                        print("Acciones : ", casos)
                     else:
                         # get random action
                         action = np.random.randint(0, dq_agent.num_actions)
