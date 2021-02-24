@@ -12,7 +12,7 @@ from collections import deque
 MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=100, minibatch_size=25, max_cases=300,hidden_nodes=25,load = False):
+    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 100, hidden_nodes=25,load = False):
         #parameters
         self.num_actions = num_actions
         self.num_states = num_states
@@ -24,6 +24,7 @@ class DQNAgent:
         self.update_time = update_time
         self.max_cases = max_cases
         self.hidden_nodes = hidden_nodes 
+        self.cases_to_delete = cases_to_delete
         if not load:
 
             # main model
@@ -71,7 +72,7 @@ class DQNAgent:
         if len(self.replay_memory) < self.min_rep_mem_total:
             return
         if len(self.replay_memory) > self.max_cases:
-            self.replay_memory = deque(itertools.islice(self.replay_memory, self.min_rep_mem_size*2, None))
+            self.replay_memory = deque(itertools.islice(self.replay_memory, self.cases_to_delete, None))
 
         self.min_rep_mem_total += self.min_rep_mem_size
 

@@ -14,9 +14,11 @@ from pysc2.lib import units
 
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 50  # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
 HIDDEN_NODES = 100
+MAX_CASES = 800
+CASES_TO_DELETE = 200
 
 # environment values
 
@@ -57,7 +59,7 @@ class Agent:
     _NOT_QUEUED = [0]
     _QUEUED = [1]
 
-    _MOVE_VAL = 8.5
+    _MOVE_VAL = 3.5
     _RADIO_VAL = 20
 
     _UP = 0

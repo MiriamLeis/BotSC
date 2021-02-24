@@ -43,6 +43,8 @@ def main():
                                         rep_mem_size=class_agent.REPLAY_MEMORY_SIZE,
                                         min_rep_mem_size=class_agent.MIN_REPLAY_MEMORY_SIZE,
                                         update_time=class_agent.UPDATE_TARGET_EVERY,
+                                        max_cases = class_agent.MAX_CASES,
+                                        cases_to_delete = class_agent.CASES_TO_DELETE,
                                         hidden_nodes = class_agent.HIDDEN_NODES,
                                         load=False)
 
