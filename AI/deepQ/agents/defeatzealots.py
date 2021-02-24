@@ -177,33 +177,43 @@ class Agent:
     '''
         Return reward
     '''
-    def get_reward(self, obs):
+    def get_reward(self, obs, can_shoot, rad):
         reward = 0
 
         # reward for moving
         stalker = self.__get_stalker(obs)
         dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
-        if (dist > self._RADIO_VAL) and self.__can_shoot(obs, units.Protoss.Stalker):
+
+        print("Separacion = ", dist)
+        if not rad and can_shoot:
+            print("Estas fuera de rango y puedes disparar")
             if ((self.last_dist - dist) > 0):
                 reward += 1
+                print("Recompensa por acercarte")
             else: 
                 reward -= 8
-        if (dist < self._RADIO_VAL) and not self.__can_shoot(obs, units.Protoss.Stalker):
+                print("Castigo por alejarte")
+        if rad:
+            print("Estas en rango")
             if ((self.last_dist - dist) > 0):
                 reward -= 1
-            elif ((self.last_dist - dist) < 0): 
-                reward += 3
+                print("Castigo por acercarte")
+            elif ((self.last_dist - dist) < 0.25): 
+                reward += 2
+                print("Recompensa por alejarte")
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
+        print("Diferencia de vida = ", diff)
         if diff > 0:
-            reward += 1
+            reward += 2
+            print("Recompensa por hacer mas daño")
         elif diff < 0:
             reward -= 1
-        
+            print("Recompensa por hacer menos daño")
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
         self.ally_totalHP = actual_ally_totalHP

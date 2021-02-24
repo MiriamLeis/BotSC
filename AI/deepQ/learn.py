@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 1000
+EPISODES = 1500
 STEPS = 1_900
 
 
@@ -71,7 +71,7 @@ def main():
             end = False
 
             actualTime = 2.0
-            timeForAction = 0.5
+            timeForAction = 0.6
             lastTime = ((obs[0]).observation["game_loop"] / 16)
         
             ep += 1
@@ -86,7 +86,7 @@ def main():
                 realTime = ((obs[0]).observation["game_loop"] / 16)
                 delta = realTime - lastTime
                 lastTime = realTime
-                
+
                 if actualTime >= timeForAction:
                    # get new state
                     new_state = agent.get_state(obs[0])
@@ -94,8 +94,11 @@ def main():
                     done = agent.check_done(obs[0], STEPS-1)
 
                     # get reward of our action
-                    reward = agent.get_reward(obs[0])
-                    
+                    reward = agent.get_reward(obs[0],current_state[8],current_state[9])
+                    print("Recompensa : ", reward)
+                    print("Estado : ", current_state)
+                    print("Accion : ", action)
+                    print("---")
                     agent.update(obs[0], delta)
 
                     # Every step we update replay memory and train main network
@@ -109,8 +112,6 @@ def main():
                         # choose action
                         casos = dq_agent.get_qs(current_state)
                         action = np.argmax(casos)
-                        print("Estado : ", current_state)
-                        print("Acciones : ", casos)
                     else:
                         # get random action
                         action = np.random.randint(0, dq_agent.num_actions)
