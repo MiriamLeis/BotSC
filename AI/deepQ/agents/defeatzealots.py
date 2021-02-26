@@ -14,11 +14,11 @@ from pysc2.lib import units
 
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
+MIN_REPLAY_MEMORY_SIZE = 200  # Minimum number of steps in a memory to start training
+UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 HIDDEN_NODES = 100
-MAX_CASES = 800
-CASES_TO_DELETE = 200
+MAX_CASES = 1000
+CASES_TO_DELETE = 100
 
 # environment values
 
@@ -59,7 +59,7 @@ class Agent:
     _NOT_QUEUED = [0]
     _QUEUED = [1]
 
-    _MOVE_VAL = 3.5
+    _MOVE_VAL = 5.5
     _RADIO_VAL = 20
 
     _UP = 0
@@ -96,6 +96,7 @@ class Agent:
     '''
     def prepare(self, obs):
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
+        self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
         self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
@@ -179,43 +180,50 @@ class Agent:
     '''
         Return reward
     '''
-    def get_reward(self, obs, can_shoot, rad):
+    def get_reward(self, obs, can_shoot, rad, shot):
         reward = 0
 
         # reward for moving
         stalker = self.__get_stalker(obs)
         dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
-        #print("Separacion = ", dist)
+        print("Separacion = ", dist)
         if not rad and can_shoot:
-            #print("Estas fuera de rango y puedes disparar")
+            print("Estas fuera de rango y puedes disparar")
             if ((self.last_dist - dist) > 0):
                 reward += 1
-                #print("Recompensa por acercarte")
+                print("Recompensa por acercarte")
             else: 
-                reward -= 8
-                #print("Castigo por alejarte")
-        if rad:
-            #print("Estas en rango")
-            if ((self.last_dist - dist) > 0):
                 reward -= 1
-                #print("Castigo por acercarte")
-            elif ((self.last_dist - dist) < 0.25): 
+                print("Castigo por alejarte")
+        if rad:
+            print("Estas en rango")
+            if ((self.last_dist - dist) >= 0):
+                reward -= 1
+                print("Castigo por acercarte")
+            elif not can_shoot:
                 reward += 2
-                #print("Recompensa por alejarte")
+                print("Recompensa por alejarte")
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        actual_enemy_onlyHP = self.__get_group_onlyHP(obs, units.Protoss.Zealot)
+
+        diffOnlyHP = (self.enemy_onlyHP - actual_enemy_onlyHP)
+        if diffOnlyHP < 0:
+            reward = 2
+            return reward
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
-        #print("Diferencia de vida = ", diff)
-        if diff > 0:
+
+        print("Diferencia de vida = ", diff)
+        if diff > -5 and shot and can_shoot:
             reward += 2
-            #print("Recompensa por hacer mas daño")
+            print("Recompensa por hacer mas daño")
         elif diff < 0:
             reward -= 1
-            #print("Recompensa por hacer menos daño")
+            print("Recompensa por hacer menos daño")
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
         self.ally_totalHP = actual_ally_totalHP
@@ -263,7 +271,7 @@ class Agent:
                         stalkery += self._MOVE_VAL
                     if(stalkerx - self._MOVE_VAL < 3.5):
                         stalkerx += self._MOVE_VAL
-                    nextPosition = [stalkerx - self._MOVE_VAL, stalkery - self._MOVE_VAL]
+                    nextPosition = [stalkerx - (self._MOVE_VAL/2), stalkery - (self._MOVE_VAL/2)]
 
                 elif self.possible_actions[action] == self._LEFT:
                     if(stalkerx - self._MOVE_VAL < 3.5):
@@ -275,7 +283,7 @@ class Agent:
                         stalkery -= self._MOVE_VAL
                     if(stalkerx - self._MOVE_VAL < 3.5):
                         stalkerx += self._MOVE_VAL
-                    nextPosition = [stalkerx - self._MOVE_VAL, stalkery + self._MOVE_VAL]
+                    nextPosition = [stalkerx - (self._MOVE_VAL/2), stalkery + (self._MOVE_VAL/2)]
 
                 elif self.possible_actions[action] == self._DOWN:
                     if(stalkery + self._MOVE_VAL > 44.5):
@@ -287,7 +295,7 @@ class Agent:
                         stalkery -= self._MOVE_VAL
                     if(stalkerx + self._MOVE_VAL > 60.5):
                         stalkerx -= self._MOVE_VAL
-                    nextPosition = [stalkerx + self._MOVE_VAL, stalkery + self._MOVE_VAL]
+                    nextPosition = [stalkerx + (self._MOVE_VAL/2), stalkery + (self._MOVE_VAL/2)]
 
                 elif self.possible_actions[action] == self._RIGHT:
                     if(stalkerx + self._MOVE_VAL > 60.5):
@@ -299,7 +307,7 @@ class Agent:
                         stalkery += self._MOVE_VAL
                     if(stalkerx + self._MOVE_VAL > 60.5):
                         stalkerx -= self._MOVE_VAL
-                    nextPosition = [stalkerx + self._MOVE_VAL, stalkery - self._MOVE_VAL]
+                    nextPosition = [stalkerx + (self._MOVE_VAL/2), stalkery - (self._MOVE_VAL/2)]
 
                 func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, nextPosition])
 
@@ -340,6 +348,18 @@ class Agent:
         totalHP = 0
         for unit in group:
             totalHP += unit.health + unit.shield
+        return totalHP
+
+    '''
+        (Private method)
+        Return totalHP of a group = (unit health plus unit shield)
+    '''
+
+    def __get_group_onlyHP(self, obs, group_type):
+        group = self.__get_group(obs, group_type)
+        totalHP = 0
+        for unit in group:
+            totalHP += unit.health
         return totalHP
 
     '''

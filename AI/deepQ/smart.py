@@ -1,5 +1,6 @@
 from pysc2.env import sc2_env
 from pysc2 import maps
+from pysc2.lib import actions
 
 from tqdm import tqdm
 
@@ -15,7 +16,7 @@ FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
 import dq_network
-import agents.movetobeacon as class_agent #change path as needed
+import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
 EPISODES = 20
@@ -25,7 +26,8 @@ STEPS = 1_900
 def main():
     # Create environment
     AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
-            feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16))
+            feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16),
+            use_feature_units=True)
 
     with sc2_env.SC2Env(map_name=maps.get(class_agent.MAP_NAME),
                         players=[sc2_env.Agent(sc2_env.Race.terran)],
@@ -54,6 +56,8 @@ def main():
         ep = 0
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             # decay epsilon
+            print()
+
 
             obs = env.reset()
             step = 1
@@ -63,20 +67,29 @@ def main():
 
             obs = env.step(actions=[func])
         
+            done = False
+            end = False
             ep += 1
 
             actualTime = 2.0
-            timeForAction = 0.5
+            timeForAction = 0.2
             lastTime = ((obs[0]).observation["game_loop"] / 16)
 
             for s in range(STEPS):
+                end = agent.get_end(obs[0])
+                if end:
+                    break
+
                 # get deltaTime
                 realTime = ((obs[0]).observation["game_loop"] / 16)
                 delta = realTime - lastTime
                 lastTime = realTime
+
                 if actualTime >= timeForAction:
                     # get new state
                     new_state = agent.get_state(obs[0])
+
+                    done = agent.check_done(obs[0], STEPS-1)
 
                     current_state = new_state
 
@@ -89,7 +102,7 @@ def main():
                 else:
                     actualTime += delta
 
-
+                func = agent.get_action(obs[0], action)
                 obs = env.step(actions=[func])
                     
                 step += 1

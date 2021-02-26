@@ -37,11 +37,11 @@ class DQNAgent:
             self.target_model = self.create_model()
             self.target_model.set_weights(self.model.get_weights()) # do it again after a while
 
-            # deque -> array or list 
-            self.replay_memory = deque(maxlen=self.rep_mem_size)
+        # deque -> array or list 
+        self.replay_memory = deque(maxlen=self.rep_mem_size)
 
-            # track internally when we are ready to update target_model
-            self.target_update_counter = 0
+        # track internally when we are ready to update target_model
+        self.target_update_counter = 0
 
     def create_model(self):
         
@@ -119,3 +119,4 @@ class DQNAgent:
         keras.models.save_model(self.model, filepath)
     def loadModel(self, filepath):
         self.model = keras.models.load_model(filepath)
+        self.target_model = keras.models.load_model(filepath)
