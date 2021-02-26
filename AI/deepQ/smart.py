@@ -55,9 +55,7 @@ def main():
 
         ep = 0
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
-            # decay epsilon
             print()
-
 
             obs = env.reset()
             step = 1

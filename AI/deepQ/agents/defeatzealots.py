@@ -99,6 +99,10 @@ class Agent:
         self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
         self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
+        self.current_can_shoot = False
+        self.last_can_shoot = False
+        self.current_on_range = False
+        self.last_on_range = False
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
@@ -106,6 +110,8 @@ class Agent:
         Update basic values
     '''
     def update(self, obs, delta):
+        self.last_can_shoot = self.current_can_shoot
+        self.last_on_range = self.current_on_range
         return
     
     '''
@@ -161,10 +167,16 @@ class Agent:
         # check cooldown
         if self.__can_shoot(obs, units.Protoss.Stalker):
             state[8] = 1
+            self.current_can_shoot = True
+        else:
+            self.current_can_shoot = False
         
         # check dist
         if self.__get_dist([stalkerx, stalkery], [zealotx, zealoty]) <= self._RADIO_VAL:
             state[9] = 1
+            self.current_on_range = True
+        else:
+            self.current_on_range = False
 
         if (stalkery - self._MOVE_VAL) < 3.5:
             state[10] = 1
@@ -180,36 +192,41 @@ class Agent:
     '''
         Return reward
     '''
-    def get_reward(self, obs, can_shoot, rad, shot):
+    def get_reward(self, obs, action):
         reward = 0
 
         # reward for moving
         stalker = self.__get_stalker(obs)
         dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
-        print("Separacion = ", dist)
-        if not rad and can_shoot:
-            print("Estas fuera de rango y puedes disparar")
+            # check if we arent on range but we can shot
+        if not self.last_on_range and self.last_can_shoot:
+            
+                # reward for getting close
             if ((self.last_dist - dist) > 0):
                 reward += 1
-                print("Recompensa por acercarte")
+
+                # punishment for running away
             else: 
                 reward -= 1
-                print("Castigo por alejarte")
-        if rad:
-            print("Estas en rango")
+
+            # check if we are on range
+        elif self.last_on_range:
+
+                # punishment for getting close
             if ((self.last_dist - dist) >= 0):
                 reward -= 1
-                print("Castigo por acercarte")
-            elif not can_shoot:
+
+                # reward for running away
+            elif not self.last_can_shoot:
                 reward += 2
-                print("Recompensa por alejarte")
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
         actual_enemy_onlyHP = self.__get_group_onlyHP(obs, units.Protoss.Zealot)
 
+            # check if zealots reapered
         diffOnlyHP = (self.enemy_onlyHP - actual_enemy_onlyHP)
         if diffOnlyHP < 0:
             reward = 2
@@ -217,13 +234,12 @@ class Agent:
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
-        print("Diferencia de vida = ", diff)
-        if diff > -5 and shot and can_shoot:
+            # check if we made some damage and we have shot with this action
+        if diff > -5 and (action == 8) and self.last_can_shoot:
             reward += 2
-            print("Recompensa por hacer mas daño")
         elif diff < 0:
             reward -= 1
-            print("Recompensa por hacer menos daño")
+
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
         self.ally_totalHP = actual_ally_totalHP

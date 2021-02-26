@@ -161,7 +161,7 @@ class Agent:
     '''
         Return reward
     '''
-    def get_reward(self, obs):
+    def get_reward(self, obs, action):
         return self.oldDist - self.__get_dist(obs)
 
     '''
