@@ -12,7 +12,7 @@ from collections import deque
 MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 100, hidden_nodes=25,load = False):
+    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 10, hidden_nodes=25, num_hidden_layers = 1, load = False):
         #parameters
         self.num_actions = num_actions
         self.num_states = num_states
@@ -25,6 +25,7 @@ class DQNAgent:
         self.max_cases = max_cases
         self.hidden_nodes = hidden_nodes 
         self.cases_to_delete = cases_to_delete
+        self.num_hidden_layers = num_hidden_layers
         if not load:
 
             # main model
@@ -48,8 +49,9 @@ class DQNAgent:
         # layers
         inputs = Input(shape=(self.num_states,))
         x = Dense(self.hidden_nodes, activation='relu')(inputs)
-        x2 = Dense(self.hidden_nodes + 20, activation='relu')(x)
-        outputs = Dense(self.num_actions)(x2)
+        for i in range(1, self.num_hidden_layers):
+            x = Dense(self.hidden_nodes + (20 * i), activation='relu')(x)
+        outputs = Dense(self.num_actions)(x)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)

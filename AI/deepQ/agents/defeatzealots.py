@@ -16,8 +16,10 @@ DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 200  # Minimum number of steps in a memory to start training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
-HIDDEN_NODES = 100
+MINIBATCH_SIZE = 200
 MAX_CASES = 1000
+HIDDEN_NODES = 100
+HIDDEN_LAYERS = 2
 CASES_TO_DELETE = 100
 
 # environment values
@@ -34,6 +36,7 @@ FILE_NAME = 'zealotsModel'
             def update()
             def get_num_actions()
             def get_num_states()
+            def get_end()
             def get_state()
             def get_action()
             def get_reward()

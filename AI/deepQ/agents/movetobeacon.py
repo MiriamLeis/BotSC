@@ -6,6 +6,9 @@ from pysc2.lib import features
 
 '''
     Add these parameters mandatory
+
+    |
+    V
 '''
 
 # network values
@@ -14,6 +17,11 @@ DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 50  # Minimum number of steps in a memory to start training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
+MINIBATCH_SIZE = 25
+MAX_CASES = 100
+HIDDEN_NODES = 25
+HIDDEN_LAYERS = 1
+CASES_TO_DELETE = 10
 
 # environment values
 
@@ -29,6 +37,7 @@ FILE_NAME = 'beaconModel'
             def update()
             def get_num_actions()
             def get_num_states()
+            def get_end()
             def get_state()
             def get_action()
             def get_reward()
