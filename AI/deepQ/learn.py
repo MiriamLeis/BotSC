@@ -19,7 +19,7 @@ import dq_network
 import agents.movetobeacon as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 20
+EPISODES = 30
 STEPS = 1_900
 
 

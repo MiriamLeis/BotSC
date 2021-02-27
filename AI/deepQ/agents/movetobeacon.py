@@ -17,11 +17,11 @@ DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 50  # Minimum number of steps in a memory to start training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
-MINIBATCH_SIZE = 25
-MAX_CASES = 100
+MINIBATCH_SIZE = 40
+MAX_CASES = 70
 HIDDEN_NODES = 25
 HIDDEN_LAYERS = 1
-CASES_TO_DELETE = 10
+CASES_TO_DELETE = 0
 
 # environment values
 
@@ -171,7 +171,11 @@ class Agent:
         Return reward
     '''
     def get_reward(self, obs, action):
-        return self.oldDist - self.__get_dist(obs)
+        if self.oldDist - self.__get_dist(obs) >0:
+            reward = 1
+        else:
+            reward = -1
+        return reward
 
     '''
         Return function of new action
