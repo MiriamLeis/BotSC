@@ -14,13 +14,13 @@ from pysc2.lib import units
 
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 200  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 300  # Minimum number of steps in a memory to start training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MINIBATCH_SIZE = 256
 MAX_CASES = 10000
 HIDDEN_NODES = 100
 HIDDEN_LAYERS = 2
-CASES_TO_DELETE = 100
+CASES_TO_DELETE = 350
 
 # environment values
 
@@ -102,10 +102,8 @@ class Agent:
         self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
         self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
-        self.current_can_shoot = False
+
         self.last_can_shoot = False
-        self.current_on_range = False
-        self.last_on_range = False
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
@@ -114,7 +112,6 @@ class Agent:
     '''
     def update(self, obs, delta):
         self.last_can_shoot = self.current_can_shoot
-        self.last_on_range = self.current_on_range
         return
     
     '''
@@ -200,29 +197,6 @@ class Agent:
 
         # reward for moving
         stalker = self.__get_stalker(obs)
-        dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
-
-            # check if we arent on range but we can shot
-        if not self.last_on_range and self.last_can_shoot:
-            
-                # reward for getting close
-            if ((self.last_dist - dist) > 0):
-                reward += 1
-
-                # punishment for running away
-            else: 
-                reward -= 1
-
-            # check if we are on range
-        elif self.last_on_range:
-
-                # punishment for getting close
-            if ((self.last_dist - dist) >= 0):
-                reward -= 1
-
-                # reward for running away
-            elif not self.last_can_shoot:
-                reward += 2
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
@@ -246,7 +220,6 @@ class Agent:
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
         self.ally_totalHP = actual_ally_totalHP
-        self.last_dist = dist
 
         return reward
     

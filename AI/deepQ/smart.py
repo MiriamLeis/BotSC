@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 20
+EPISODES = 100
 STEPS = 1_900
 
 
