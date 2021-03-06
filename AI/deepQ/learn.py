@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 500
+EPISODES = 1500
 STEPS = 1_900
 
 
@@ -48,7 +48,9 @@ def main():
                                         cases_to_delete = class_agent.CASES_TO_DELETE,
                                         hidden_nodes = class_agent.HIDDEN_NODES,
                                         num_hidden_layers = class_agent.HIDDEN_LAYERS,
-                                        load=False)
+                                        load=True)
+
+        dq_agent.loadModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
 
         epsilon = 1
         ep_rewards = [-200]
@@ -61,7 +63,7 @@ def main():
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             print()
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - 5))
+            epsilon = 1 - (ep/(EPISODES - 300))
 
             obs = env.reset()
             step = 1
@@ -135,7 +137,7 @@ def main():
                 
                 step += 1
 
-        #dq_agent.saveModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
+        dq_agent.saveModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
             
 
 main()

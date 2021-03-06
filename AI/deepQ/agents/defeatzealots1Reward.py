@@ -14,13 +14,13 @@ from pysc2.lib import units
 
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 300  # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
-MINIBATCH_SIZE = 256
-MAX_CASES = 10000
+MIN_REPLAY_MEMORY_SIZE = 150  # Minimum number of steps in a memory to start training
+UPDATE_TARGET_EVERY = 25  # Terminal states (end of episodes)
+MINIBATCH_SIZE = 128
+MAX_CASES = 5000
 HIDDEN_NODES = 100
 HIDDEN_LAYERS = 2
-CASES_TO_DELETE = 350
+CASES_TO_DELETE = 500
 
 # environment values
 
@@ -62,7 +62,7 @@ class Agent:
     _NOT_QUEUED = [0]
     _QUEUED = [1]
 
-    _MOVE_VAL = 5.5
+    _MOVE_VAL = 7
     _RADIO_VAL = 20
 
     _UP = 0
@@ -178,13 +178,13 @@ class Agent:
         else:
             self.current_on_range = False
 
-        if (stalkery - self._MOVE_VAL) < 3.5:
+        if (stalkery - self._MOVE_VAL) < 5:
             state[10] = 1
-        if (stalkerx - self._MOVE_VAL) < 3.5:
+        if (stalkerx - self._MOVE_VAL) < 5:
             state[11] = 1
-        if (stalkery + self._MOVE_VAL) > 44.5:
+        if (stalkery + self._MOVE_VAL) > 43:
             state[12] = 1
-        if (stalkerx + self._MOVE_VAL) > 60.5:
+        if (stalkerx + self._MOVE_VAL) > 59:
             state[13] = 1
         
         return state
