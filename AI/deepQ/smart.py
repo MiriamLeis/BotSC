@@ -16,7 +16,7 @@ FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
 import dq_network
-import agents.defeatzealots as class_agent #change path as needed
+import agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
 EPISODES = 100

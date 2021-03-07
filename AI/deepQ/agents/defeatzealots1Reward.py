@@ -92,18 +92,21 @@ class Agent:
     '''
     def __init__(self):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 14
+        self.num_states = 16
 
     '''
         Prepare basic parameters.
     '''
     def prepare(self, obs):
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
+        self.enemy_originalHP = self.enemy_totalHP
         self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        self.ally_originalHP = self.ally_totalHP
         self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
         self.last_can_shoot = False
+        self.dead = False
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
@@ -128,6 +131,11 @@ class Agent:
     
     '''
         Return agent state
+        state:
+        [UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT, ------> enemy position
+        COOLDOWN, RANGE,
+        UP WALL, LEFT WALL, DOWN WALL, RIGHT WALL,
+        ENEMY HP, ALLY HP]
     '''
     def get_state(self, obs):
         stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
@@ -144,7 +152,7 @@ class Agent:
             angleD = 360 - angleD
         
         # prepare state
-        state = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        state = [0,0,0,0,0,0,0,0, 0,0, 0,0,0,0, 0,0]
 
         # check angle
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
@@ -178,6 +186,7 @@ class Agent:
         else:
             self.current_on_range = False
 
+        # check limits
         if (stalkery - self._MOVE_VAL) < 5:
             state[10] = 1
         if (stalkerx - self._MOVE_VAL) < 5:
@@ -186,6 +195,14 @@ class Agent:
             state[12] = 1
         if (stalkerx + self._MOVE_VAL) > 59:
             state[13] = 1
+            
+        # check hp
+        actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
+        state[14] = actual_enemy_totalHP / self.enemy_originalHP
+        
+        actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        state[15] = actual_ally_totalHP / self.ally_originalHP
+
         
         return state
 
@@ -195,30 +212,24 @@ class Agent:
     def get_reward(self, obs, action):
         reward = 0
 
-        # reward for moving
-        stalker = self.__get_stalker(obs)
-
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
         actual_enemy_onlyHP = self.__get_group_onlyHP(obs, units.Protoss.Zealot)
 
-            # check if zealots reapered
-        diffOnlyHP = (self.enemy_onlyHP - actual_enemy_onlyHP)
-        if diffOnlyHP < 0:
-            reward = 2
-            return reward
-
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
             # check if we made some damage and we have shot with this action
         if diff > -5 and (action == 8) and self.last_can_shoot:
-            reward += 2
-        elif diff < 0:
-            reward -= 1
+            reward += 1
+        
+        if self.dead:
+            reward += -1
+            self.dead = False
 
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
+        self.enemy_onlyHP = actual_enemy_onlyHP
         self.ally_totalHP = actual_ally_totalHP
 
         return reward
@@ -228,12 +239,19 @@ class Agent:
     '''
     def get_end(self, obs):
         stalkers = self.__get_group(obs, units.Protoss.Stalker)
+        self.dead = not stalkers
         return not stalkers
 
     '''
-        Return if current action was done
+        Return
     '''
     def check_done(self, obs, last_step):
+        stalkers = self.__get_group(obs, units.Protoss.Stalker)
+        zealots = self.__get_group(obs, units.Protoss.Zealot)
+
+        if last_step or not stalkers or not zealots:
+            return True
+
         return False
 
     '''

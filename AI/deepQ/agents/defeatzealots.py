@@ -261,6 +261,12 @@ class Agent:
         Return if current action was done
     '''
     def check_done(self, obs, last_step):
+        stalkers = self.__get_group(obs, units.Protoss.Stalker)
+        zealots = self.__get_group(obs, units.Protoss.Zealot)
+
+        if last_step or not stalkers or not zealots:
+            return True
+
         return False
 
     '''
