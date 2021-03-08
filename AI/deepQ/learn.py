@@ -19,7 +19,7 @@ import dq_network
 import agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 1500
+EPISODES = 1000
 STEPS = 1_900
 
 
@@ -60,14 +60,22 @@ def main():
         tf.random.set_seed(1)
 
         ep = 0
+        end = False
+        action = -1
+        current_state = -1
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             print()
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - 300))
+            epsilon = 1 - (ep/(EPISODES - (EPISODES/10)))
 
             obs = env.reset()
             step = 1
             
+            if end:
+                reward = agent.get_reward(obs[0], action)
+                dq_agent.update_replay_memory((current_state, action, reward, agent.get_state(obs[0]), agent.check_done(obs[0], STEPS-1)))
+
+
             func, action = agent.prepare(obs[0])
             current_state = agent.get_state(obs[0])
 
@@ -97,7 +105,7 @@ def main():
                    # get new state
                     new_state = agent.get_state(obs[0])
 
-                    done = agent.check_done(obs[0], STEPS-1)
+                    done = agent.check_done(obs[0], step == STEPS-1)
 
                     # get reward of our action
                     reward = agent.get_reward(obs[0], action)
