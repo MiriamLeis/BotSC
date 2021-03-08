@@ -15,12 +15,13 @@ from pysc2.lib import units
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 150  # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY = 25  # Terminal states (end of episodes)
+LEARN_EVERY = 50
+UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
 MINIBATCH_SIZE = 128
-MAX_CASES = 5000
+MAX_CASES = 2500
 HIDDEN_NODES = 100
 HIDDEN_LAYERS = 2
-CASES_TO_DELETE = 500
+CASES_TO_DELETE = 150
 
 # environment values
 
@@ -213,9 +214,9 @@ class Agent:
 
             # check if we made some damage and we have shot with this action
         if diff > -5 and (action == 8) and self.last_can_shoot:
-            reward += 2
+            reward += 1
         elif diff < 0:
-            reward -= 1
+            reward -= 2
 
         #update values
         self.enemy_totalHP = actual_enemy_totalHP

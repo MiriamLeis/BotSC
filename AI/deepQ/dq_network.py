@@ -12,14 +12,14 @@ from collections import deque
 MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 10, hidden_nodes=25, num_hidden_layers = 1, load = False):
+    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, learn_every = 50,update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 10, hidden_nodes=25, num_hidden_layers = 1, load = False):
         #parameters
         self.num_actions = num_actions
         self.num_states = num_states
         self.discount = discount
         self.rep_mem_size = rep_mem_size
-        self.min_rep_mem_size = min_rep_mem_size
-        self.min_rep_mem_total = self.min_rep_mem_size
+        self.min_rep_mem_size = learn_every
+        self.min_rep_mem_total = min_rep_mem_size
         self.minibatch_size = minibatch_size
         self.update_time = update_time
         self.max_cases = max_cases
