@@ -55,7 +55,7 @@ class DQNAgent:
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)
-        model.compile(loss="mse", optimizer=Adam(learning_rate=0.1), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer='adam', metrics=['accuracy'])
     
         model.summary()
         return model

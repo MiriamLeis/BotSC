@@ -15,13 +15,13 @@ from pysc2.lib import units
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 150  # Minimum number of steps in a memory to start training
-LEARN_EVERY = 50
-UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
-MINIBATCH_SIZE = 128
-MAX_CASES = 2500
+LEARN_EVERY = 80
+UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
+MINIBATCH_SIZE = 64
+MAX_CASES = 1000
 HIDDEN_NODES = 100
 HIDDEN_LAYERS = 2
-CASES_TO_DELETE = 150
+CASES_TO_DELETE = 100
 
 # environment values
 
@@ -65,6 +65,7 @@ class Agent:
 
     _MOVE_VAL = 7
     _RADIO_VAL = 20
+    _RANGE_VAL = 5
 
     _UP = 0
     _UP_LEFT = 1
@@ -181,11 +182,13 @@ class Agent:
             self.current_can_shoot = False
         
         # check dist
-        if self.__get_dist([stalkerx, stalkery], [zealotx, zealoty]) <= self._RADIO_VAL:
-            state[9] = 1
-            self.current_on_range = True
+        dist = self.__get_dist([stalkerx, stalkery], [zealotx, zealoty])
+        if dist >= self._RADIO_VAL:
+            state[9] = 0
+        elif dist >= self._RANGE_VAL:
+            state[9] = 0.5
         else:
-            self.current_on_range = False
+            state[9] = 1
 
         # check limits
         if (stalkery - self._MOVE_VAL) < 5:
@@ -199,10 +202,23 @@ class Agent:
             
         # check hp
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
-        state[14] = actual_enemy_totalHP / self.enemy_originalHP
+        percentage = actual_enemy_totalHP / self.enemy_originalHP
+        if percentage >= 0.75: 
+            state[14] = 1
+        elif percentage >= 0.3: 
+            state[14] = 0.5
+        else:
+            state[14] = 0
         
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
-        state[15] = actual_ally_totalHP / self.ally_originalHP
+        percentage = actual_ally_totalHP / self.ally_originalHP
+
+        #if percentage >= 0.75: 
+        state[15] = 1
+        """elif percentage >= 0.3: 
+            state[15] = 0.5
+        else:
+            state[15] = 0"""
 
         
         return state
@@ -221,8 +237,8 @@ class Agent:
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
             # check if we made some damage and we have shot with this action
-        if diff > -5 and (action == 8) and self.last_can_shoot:
-            reward += 1
+        #if diff > -5 and (action == 8) and self.last_can_shoot:
+            #reward += 1
         
         if self.dead:
             reward += -1
