@@ -1,27 +1,22 @@
 import numpy as np
 import math
 import random
+import os
 
 from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.lib import units
 
 '''
+    Import Neural Network
+'''
+import sys
+sys.path.append('../')
+from dq_network import DQNAgent
+
+'''
     Add these parameters mandatory
 '''
-
-# network values
-
-DISCOUNT = 0.99
-REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MAX_CASES = 1_000 # Maximum number of cases until we start to learn
-MIN_REPLAY_MEMORY_SIZE = 150  # Minimum number of steps in a memory to start learning
-CASES_TO_DELETE = 100 # Cases to delete when we surpassed cases limit.               CASES_TO_DELETE < MIN_REPLAY_MEMORY_SIZE
-UPDATE_TARGET_EVERY = 50  # When we'll copy weights from main network to target.   UPDATE_TARGET_EVERY > MIN_REPLAY_MEMORY_SIZE
-LEARN_EVERY = 80
-MINIBATCH_SIZE = 64
-HIDDEN_NODES = 100
-HIDDEN_LAYERS = 2
 
 # environment values
 
@@ -33,18 +28,18 @@ FILE_NAME = 'zealotsModel'
     Agent class must have this methods:
 
         class Agent:
-            def preprare()
-            def update()
+            def preprare(obs)
+            def update(obs, deltaTime)
             def get_num_actions()
             def get_num_states()
-            def get_end()
-            def get_state()
-            def get_action()
-            def get_reward()
-            def check_done()
+            def get_state(obs)
+            def get_action(obs)
+            def get_reward(obs, action)
+            def get_end(obs)
+            def check_done(obs, last_step)
 '''
 
-class Agent:
+class Agent (DQNAgent):
 
     '''
         Useful variables 
@@ -92,12 +87,31 @@ class Agent:
     '''
         Initialize the agent
     '''
-    def __init__(self):
+    def __init__(self, load=False):
         self.num_actions = len(self.possible_actions)
         self.num_states = 16
 
+        # initialize neural network
+        DQNAgent.__init__(self, 
+                            num_actions=self.num_actions,
+                            num_states=self.num_states,
+                            discount=0.99,
+                            rep_mem_size=50_000,        # How many last steps to keep for model training
+                            min_rep_mem_size=150,       # Minimum number of steps in a memory to start learning
+                            learn_every=80,
+                            update_time=50,             # When we'll copy weights from main network to target.
+                            minibatch_size=64,
+                            max_cases=1_000,            # Maximum number of cases until we start to learn
+                            cases_to_delete=100,        # Cases to delete when we surpassed cases limit.
+                            hidden_nodes=100,
+                            num_hidden_layers=2,
+                            load=load)
+        
+        if load:
+            DQNAgent.loadModel(os.getcwd() + '/models/' + FILE_NAME + '.h5')
+
     '''
-        Prepare basic parameters.
+        Prepare basic parameters. This is called before start the episode.
     '''
     def prepare(self, obs):
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)

@@ -1,28 +1,20 @@
 import numpy as np
 import math
+import os
 
 from pysc2.lib import actions
 from pysc2.lib import features
 
 '''
-    Add these parameters mandatory
-
-    |
-    V
+    Import Neural Network
 '''
+import sys
+sys.path.append('../')
+from dq_network import DQNAgent
 
-# network values
-
-DISCOUNT = 0.99
-REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 50  # Minimum number of steps in a memory to start training
-UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
-MINIBATCH_SIZE = 40
-MAX_CASES = 70
-HIDDEN_NODES = 25
-HIDDEN_LAYERS = 1
-CASES_TO_DELETE = 0
-
+'''
+    Add these parameters mandatory
+'''
 # environment values
 
 MAP_NAME = 'MoveToBeacon'
@@ -33,18 +25,18 @@ FILE_NAME = 'beaconModel'
     Agent class must have this methods:
 
         class Agent:
-            def preprare()
-            def update()
+            def preprare(obs)
+            def update(obs, deltaTime)
             def get_num_actions()
             def get_num_states()
-            def get_end()
-            def get_state()
-            def get_action()
-            def get_reward()
-            def check_done()
+            def get_state(obs)
+            def get_action(obs)
+            def get_reward(obs, action)
+            def get_end(obs)
+            def check_done(obs, last_step)
 '''
 
-class Agent:
+class Agent (DQNAgent):
 
     '''
         Useful variables 
@@ -79,9 +71,24 @@ class Agent:
     '''
         Initialize the agent
     '''
-    def __init__(self):
+    def __init__(self, load):
         self.num_actions = len(self.possible_actions)
         self.num_states = 8
+
+        # initialize neural network
+        DQNAgent.__init__(self, 
+                            num_actions=self.num_actions,
+                            num_states=self.num_states,
+                            discount=0.99,
+                            rep_mem_size=50_000,        # How many last steps to keep for model training
+                            min_rep_mem_size=100,       # Minimum number of steps in a memory to start learning
+                            update_time=5,             # When we'll copy weights from main network to target.
+                            minibatch_size=64,
+                            max_cases=70,            # Maximum number of cases until we start to learn
+                            load=load)
+        
+        if load:
+            DQNAgent.loadModel(os.getcwd() + '/models/' + FILE_NAME + '.h5')
 
     '''
         Prepare basic parameters.

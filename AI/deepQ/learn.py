@@ -15,8 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import dq_network
-import agents.defeatzealots1Reward as class_agent #change path as needed
+import agents.movetobeacon as class_agent #change path as needed
 
 # Environment settings
 EPISODES = 1500
@@ -35,22 +34,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent()
-
-        dq_agent = dq_network.DQNAgent(num_actions=agent.get_num_actions(),
-                                        num_states=agent.get_num_states(),
-                                        discount=class_agent.DISCOUNT,
-                                        rep_mem_size=class_agent.REPLAY_MEMORY_SIZE,
-                                        min_rep_mem_size=class_agent.MIN_REPLAY_MEMORY_SIZE,
-                                        update_time=class_agent.UPDATE_TARGET_EVERY,
-                                        max_cases = class_agent.MAX_CASES,
-                                        minibatch_size = class_agent.MINIBATCH_SIZE,
-                                        cases_to_delete = class_agent.CASES_TO_DELETE,
-                                        hidden_nodes = class_agent.HIDDEN_NODES,
-                                        num_hidden_layers = class_agent.HIDDEN_LAYERS,
-                                        load=False)
-
-        #dq_agent.loadModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
+        agent = class_agent.Agent(False)
 
         epsilon = 1
         ep_rewards = [-200]
@@ -65,6 +49,7 @@ def main():
         current_state = -1
         for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             print()
+
             # decay epsilon
             epsilon = 1 - (ep/(EPISODES - (EPISODES/2)))
 
@@ -72,10 +57,11 @@ def main():
             step = 1
             
             if end:
+                # get and learn reward for last action
                 reward = agent.get_reward(obs[0], action)
-                dq_agent.update_replay_memory((current_state, action, reward, agent.get_state(obs[0]), agent.check_done(obs[0], STEPS-1)))
+                agent.update_replay_memory((current_state, action, reward, agent.get_state(obs[0]), agent.check_done(obs[0], STEPS-1)))
 
-
+            # prepare new step
             func, action = agent.prepare(obs[0])
             current_state = agent.get_state(obs[0])
 
@@ -118,15 +104,15 @@ def main():
                     agent.update(obs[0], delta)
 
                     # Every step we update replay memory and train main network
-                    dq_agent.update_replay_memory((current_state, action, reward, new_state, done))
-                    dq_agent.train(step)
+                    agent.update_replay_memory((current_state, action, reward, new_state, done))
+                    agent.train(step)
 
                     current_state = new_state
 
 
                     if np.random.random() > epsilon:
                         # choose action
-                        casos = dq_agent.get_qs(current_state)
+                        casos = agent.get_qs(current_state)
                         action = np.argmax(casos)
                         print("Estado : ", current_state)
                         print("Acciones : ", casos)
@@ -145,7 +131,7 @@ def main():
                 
                 step += 1
 
-        dq_agent.saveModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
+        agent.saveModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
             
 
 main()
