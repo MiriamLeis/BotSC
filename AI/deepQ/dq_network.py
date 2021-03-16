@@ -12,10 +12,8 @@ from collections import deque
 MODEL_NAME = 'I_H_O'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, learn_every = 50,update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 10, hidden_nodes=25, num_hidden_layers = 1, load = False):
+    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, learn_every = 50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 10, hidden_nodes=25, num_hidden_layers = 1, load = False):
         #parameters
-        self.num_actions = num_actions
-        self.num_states = num_states
         self.discount = discount
         self.rep_mem_size = rep_mem_size
         self.min_rep_mem_size = learn_every
@@ -23,19 +21,18 @@ class DQNAgent:
         self.minibatch_size = minibatch_size
         self.update_time = update_time
         self.max_cases = max_cases
-        self.hidden_nodes = hidden_nodes 
         self.cases_to_delete = cases_to_delete
-        self.num_hidden_layers = num_hidden_layers
+
         if not load:
 
             # main model
             # model that we are not fitting every step
             # gets trained every step
-            self.model = self.create_model()
+            self.model = self.create_model(num_states, num_actions, hidden_nodes, num_hidden_layers)
 
             # target model
             # this is what we .predict against every step
-            self.target_model = self.create_model()
+            self.target_model = self.create_model(num_states, num_actions, hidden_nodes, num_hidden_layers)
             self.target_model.set_weights(self.model.get_weights()) # do it again after a while
 
         # deque -> array or list 
@@ -44,14 +41,14 @@ class DQNAgent:
         # track internally when we are ready to update target_model
         self.target_update_counter = 0
 
-    def create_model(self):
+    def create_model(self, num_states, num_actions, hidden_nodes = 25, num_hidden_layers = 1):
         
         # layers
-        inputs = Input(shape=(self.num_states,))
-        x = Dense(self.hidden_nodes, activation='relu')(inputs)
-        for i in range(1, self.num_hidden_layers):
-            x = Dense(self.hidden_nodes + (20 * i), activation='relu')(x)
-        outputs = Dense(self.num_actions)(x)
+        inputs = Input(shape=(num_states,))
+        x = Dense(hidden_nodes, activation='relu')(inputs)
+        for i in range(1, num_hidden_layers):
+            x = Dense(hidden_nodes + (20 * i), activation='relu')(x)
+        outputs = Dense(num_actions)(x)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)
@@ -74,14 +71,13 @@ class DQNAgent:
         if len(self.replay_memory) < self.min_rep_mem_total:
             return
         if len(self.replay_memory) > self.max_cases:
+            # delete leftovers 
             self.replay_memory = deque(itertools.islice(self.replay_memory, self.cases_to_delete, None))
 
         self.min_rep_mem_total += self.min_rep_mem_size
 
         minibatch = random.sample(self.replay_memory, self.minibatch_size)
 
-        # / 255 cuz we want to normalize in this case... but this is just for images.
-        # so this is cuz we want values from 0 to 1
         current_states = np.array([transition[0] for transition in minibatch])
         current_qs_list = self.model.predict(current_states)
 
@@ -113,6 +109,7 @@ class DQNAgent:
         #updating to determinate if we want to update target_model yet
         self.target_update_counter += 1
 
+        # copy weights from the main network to target network
         if self.target_update_counter > self.update_time:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0

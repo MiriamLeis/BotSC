@@ -14,14 +14,14 @@ from pysc2.lib import units
 
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 150  # Minimum number of steps in a memory to start training
+MAX_CASES = 1_000 # Maximum number of cases until we start to learn
+MIN_REPLAY_MEMORY_SIZE = 150  # Minimum number of steps in a memory to start learning
+CASES_TO_DELETE = 100 # Cases to delete when we surpassed cases limit.               CASES_TO_DELETE < MIN_REPLAY_MEMORY_SIZE
+UPDATE_TARGET_EVERY = 50  # When we'll copy weights from main network to target.   UPDATE_TARGET_EVERY > MIN_REPLAY_MEMORY_SIZE
 LEARN_EVERY = 80
-UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MINIBATCH_SIZE = 64
-MAX_CASES = 1000
 HIDDEN_NODES = 100
 HIDDEN_LAYERS = 2
-CASES_TO_DELETE = 100
 
 # environment values
 

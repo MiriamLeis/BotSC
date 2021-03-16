@@ -133,7 +133,7 @@ def main():
                         
                     else:
                         # get random action
-                        action = np.random.randint(0, dq_agent.num_actions)
+                        action = np.random.randint(0, agent.get_num_actions())
 
                     actualTime = 0
 
