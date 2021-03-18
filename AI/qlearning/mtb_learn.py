@@ -5,6 +5,7 @@ from pysc2.lib import actions
 from pysc2.env import sc2_env
 from pysc2 import maps
 from absl import flags
+from tqdm import tqdm
 
 import mtb_agent4Directions as mtb_agent
 from qtable import QTable
@@ -12,7 +13,7 @@ from qtable import QTable
 FLAGS = flags.FLAGS
 flags.DEFINE_boolean("replay", False, "If you want to save replay")
 flags.DEFINE_boolean("scratch", True, "If you want to continue with an existing Q-table")
-flags.DEFINE_integer("episodes", 50, "Number of episodes")
+flags.DEFINE_integer("episodes", 100, "Number of episodes")
 
 
 def main():
@@ -27,7 +28,6 @@ def main():
                         visualize=False,
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
-
         # Set type of agent
         if FLAGS.scratch:
             agent = mtb_agent.MoveToBeaconAgent(FLAGS.episodes - 5)
@@ -35,7 +35,7 @@ def main():
             agent = mtb_agent.MoveToBeaconAgent(FLAGS.episodes - 5, load_qt='saves/mtb_qtable.npy', load_st='saves/mtb_states.npy')
 
         # Loop of game
-        for i in range(FLAGS.episodes):
+        for i in tqdm(range(1, FLAGS.episodes+1), ascii=True, unit="episode"):
             obs = env.reset()
 
             ep_reward = 0
@@ -44,8 +44,6 @@ def main():
             marineActualPos = mtb_agent.get_marine_pos(obs[0])
             beaconActualPos = mtb_agent.get_beacon_pos(obs[0])
 
-            marineNextPosition = np.copy(marineActualPos)
-
             func = actions.FunctionCall(mtb_agent._SELECT_ARMY, [mtb_agent._SELECT_ALL])
             state = -1
             oldDist = 0
@@ -53,13 +51,17 @@ def main():
 
             error = False
 
+            actualTime = 2.0
+            timeForAction = 0.75
+            lastTime = (obs[0]).observation["game_loop"] / 16
+            delta = 0.0
             for j in range(MAX_STEPS):
                 marineActualPos = mtb_agent.get_marine_pos(obs[0])
                 
-                # if we ended our action
-                if (marineNextPosition[0] <= marineActualPos[0] + 1.0 and marineNextPosition[0] >= marineActualPos[0] - 1.0  and marineNextPosition[1] <= marineActualPos[1] + 1.0  and marineNextPosition[1] >= marineActualPos[1] - 1.0):
-                    obs = env.step(actions=[func])
+                if actualTime >= timeForAction:
 
+                    obs = env.step(actions=[func])
+                    actualTime = 0.0
                     # if we could move
                     if state != -1:
 
@@ -75,30 +77,18 @@ def main():
                         agent.qtable.learn(state, action, reward, next_state)
 
                     state, action, func, oldDist, marinePosibleNextPosition = agent.step(obs[0])
-                    marineNextPosition = marinePosibleNextPosition
 
                 # if we didnt end our action and we can move
-                elif mtb_agent._MOVE_SCREEN in obs[0].observation['available_actions']:
-                    
-                    # handle pySC2 error when marine is being hide by the beacon
-                    if marineActualPos[0] == 0.0 and marineActualPos[1] == 0.0:
-                        beacon = mtb_agent.get_beacon_pos(obs[0])
-                        marineNextPosition = [beacon[0], beacon[1]]     
-                        obs = env.step(actions=[actions.FunctionCall(mtb_agent._MOVE_SCREEN, [mtb_agent._NOT_QUEUED, [beacon[0], beacon[1]]])])
-                        error = True
-
-                    # continue handling the error
-                    elif error:
-                        marineNextPosition = [marineActualPos[0], marineActualPos[1]]   
-                        error = False
-                        
-                    # keep doing the same action until is ended
-                    else: 
+                elif mtb_agent._MOVE_SCREEN in obs[0].observation['available_actions']: 
                         obs = env.step(actions=[func])
-
                 # if we cant move we select army
                 else:
                     obs = env.step(actions=[actions.FunctionCall(mtb_agent._SELECT_ARMY, [mtb_agent._SELECT_ALL])])
+            
+                realTime = ((obs[0]).observation["game_loop"] / 16)
+                delta = realTime - lastTime
+                lastTime = realTime
+                actualTime += delta
         
         # Save replay of the game
         if FLAGS.replay:
