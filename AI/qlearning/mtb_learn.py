@@ -13,21 +13,24 @@ from qtable import QTable
 FLAGS = flags.FLAGS
 flags.DEFINE_boolean("replay", False, "If you want to save replay")
 flags.DEFINE_boolean("scratch", True, "If you want to continue with an existing Q-table")
+flags.DEFINE_boolean("visualize", False, "If you want to visualize PySC2 window")
 flags.DEFINE_integer("episodes", 100, "Number of episodes")
+flags.DEFINE_integer("steps", 1_900, "Number of steps in each episode")
 
 
 def main():
     FLAGS(sys.argv)
-    MAX_STEPS = 1900
+
     AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
             feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16))
 
     # Create environment
     with sc2_env.SC2Env(map_name=maps.get('MoveToBeacon'),
                         players=[sc2_env.Agent(sc2_env.Race.terran)],
-                        visualize=False,
+                        visualize=FLAGS.visualize,
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
+
         # Set type of agent
         if FLAGS.scratch:
             agent = mtb_agent.MoveToBeaconAgent(FLAGS.episodes - 5)
@@ -55,7 +58,7 @@ def main():
             timeForAction = 0.75
             lastTime = (obs[0]).observation["game_loop"] / 16
             delta = 0.0
-            for j in range(MAX_STEPS):
+            for j in range(FLAGS.steps):
                 marineActualPos = mtb_agent.get_marine_pos(obs[0])
                 
                 if actualTime >= timeForAction:
