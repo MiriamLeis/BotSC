@@ -56,16 +56,24 @@ class Agent (DQNAgent):
 
     _MOVE_VAL = 3.5
 
-    _UP = 0
-    _DOWN = 1
-    _RIGHT = 2
-    _LEFT = 3
+    _MOVE_UP = 0
+    _MOVE_UP_LEFT = 1
+    _MOVE_LEFT = 2
+    _MOVE_DOWN_LEFT = 3        
+    _MOVE_DOWN = 4
+    _MOVE_DOWN_RIGHT = 5
+    _MOVE_RIGHT = 6
+    _MOVE_UP_RIGHT =7
 
     possible_actions = [
-        _UP,
-        _DOWN,
-        _RIGHT,
-        _LEFT
+        _MOVE_UP,
+        _MOVE_UP_LEFT,
+        _MOVE_LEFT,
+        _MOVE_DOWN_LEFT,
+        _MOVE_DOWN,
+        _MOVE_DOWN_RIGHT,
+        _MOVE_RIGHT,
+        _MOVE_UP_RIGHT
     ]
 
     '''
@@ -81,10 +89,12 @@ class Agent (DQNAgent):
                             num_states=self.num_states,
                             discount=0.99,
                             rep_mem_size=50_000,        # How many last steps to keep for model training
-                            min_rep_mem_size=100,       # Minimum number of steps in a memory to start learning
+                            min_rep_mem_size=256,       # Minimum number of steps in a memory to start learning
                             update_time=5,             # When we'll copy weights from main network to target.
                             minibatch_size=64,
-                            max_cases=70,            # Maximum number of cases until we start to learn
+                            learn_every=128,
+                            max_cases=1024,
+                            cases_to_delete=64,            # Maximum number of cases until we start to learn
                             load=load)
         
         if load:
@@ -95,7 +105,8 @@ class Agent (DQNAgent):
         Return funcion for select army and initial action: move UP
     '''
     def prepare(self, obs):
-        self.beacon_actual_pos = self.__get_beacon_pos(obs)
+        beacon_new_pos = self.__get_beacon_pos(obs)
+        self.beacon_actual_pos = [beacon_new_pos[0], beacon_new_pos[1]]
         self.oldDist = self.__get_dist(obs)
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
@@ -135,23 +146,26 @@ class Agent (DQNAgent):
         if direction[0] > 0:
             angleD = 360 - angleD
 
+        dist = self.__get_dist(obs)
+        norm = 1 - ((dist - 4) / (55 - 5))
+        norm = round(norm,1)
         state = [0,0,0,0,0,0,0,0]
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state[0] = 1
+            state[0] = norm
         elif angleD >= 22.5 and angleD < 67.5:
-            state[1] = 1
+            state[1] = norm
         elif angleD >= 67.5 and angleD < 112.5:
-            state[2] = 1
+            state[2] = norm
         elif angleD >= 112.5 and angleD < 157.5:
-            state[3] = 1
+            state[3] = norm
         elif angleD >= 157.5 and angleD < 202.5:
-            state[4] = 1
+            state[4] = norm
         elif angleD >= 202.5 and angleD < 247.5:
-            state[5] = 1
+            state[5] = norm
         elif angleD >= 247.5 and angleD < 292.5:
-            state[6] = 1
+            state[6] = norm
         elif angleD >= 292.5 and angleD < 337.5:
-            state[7] = 1
+            state[7] = norm
 
         return state
 
@@ -169,7 +183,6 @@ class Agent (DQNAgent):
         
         # if we get beacon or it's the last step
         if self.beacon_actual_pos[0] != beacon_new_pos[0] or self.beacon_actual_pos[1] != beacon_new_pos[1] or last_step:
-            self.beacon_actual_pos = [beacon_new_pos[0], beacon_new_pos[1]]
             return True
 
         return False
@@ -178,10 +191,12 @@ class Agent (DQNAgent):
         Return reward
     '''
     def get_reward(self, obs, action):
-        if self.oldDist - self.__get_dist(obs) >0:
+        beacon_new_pos = self.__get_beacon_pos(obs)
+        reward = 0
+        if self.beacon_actual_pos[0] != round(beacon_new_pos[0],1) or self.beacon_actual_pos[1] != round(beacon_new_pos[1],1):
+            self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
             reward = 1
-        else:
-            reward = -1
+
         return reward
 
     '''
@@ -190,32 +205,55 @@ class Agent (DQNAgent):
     def get_action(self, obs, action):
         marinex, mariney = self.__get_marine_pos(obs)
         func = actions.FunctionCall(self._NO_OP, [])
-        
-        if  self.possible_actions[action] == self._UP:
+
+        if  self.possible_actions[action] == self._MOVE_UP:
             if(mariney - self._MOVE_VAL < 3.5):
                 mariney += self._MOVE_VAL
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney - self._MOVE_VAL]])
-            marineNextPosition = [marinex, mariney - self._MOVE_VAL]
 
-        elif self.possible_actions[action] == self._DOWN:
-            if(mariney + self._MOVE_VAL > 44.5):
-                mariney -= self._MOVE_VAL
+        elif self.possible_actions[action] == self._MOVE_UP_LEFT:
+            if(marinex  - self._MOVE_VAL < 3.5):
+                marinex += self._MOVE_VAL
+            if(mariney - self._MOVE_VAL < 3.5):
+                mariney +=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex-self._MOVE_VAL/2, mariney - self._MOVE_VAL/2]])
 
-            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney + self._MOVE_VAL]])
-            marineNextPosition = [marinex, mariney + self._MOVE_VAL]
-
-        elif self.possible_actions[action] == self._RIGHT:
-            if(marinex + self._MOVE_VAL > 60.5):
-                marinex -= self._MOVE_VAL
-            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex + self._MOVE_VAL, mariney]])
-            marineNextPosition = [marinex + self._MOVE_VAL, mariney]
-
-        else:
+        elif self.possible_actions[action] == self._MOVE_LEFT:
             if(marinex - self._MOVE_VAL < 3.5):
                 marinex += self._MOVE_VAL
 
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex - self._MOVE_VAL, mariney]])
-            marineNextPosition = [marinex - self._MOVE_VAL, mariney]
+
+        elif self.possible_actions[action] == self._MOVE_DOWN_LEFT:
+            if(marinex - self._MOVE_VAL < 3.5):
+                marinex +=self._MOVE_VAL
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex- self._MOVE_VAL/2, mariney + self._MOVE_VAL/2]])
+
+        elif self.possible_actions[action] == self._MOVE_DOWN:
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -= self._MOVE_VAL
+
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney + self._MOVE_VAL]])
+
+        elif self.possible_actions[action] == self._MOVE_DOWN_RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex+ self._MOVE_VAL/2, mariney + self._MOVE_VAL/2]])
+
+        elif self.possible_actions[action] == self._MOVE_RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex + self._MOVE_VAL, mariney]])
+        elif self.possible_actions[action] == self._MOVE_UP_RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            if(mariney - self._MOVE_VAL < 3.5):
+                mariney +=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex+self._MOVE_VAL/2, mariney - self._MOVE_VAL/2]])
 
         return func
     

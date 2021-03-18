@@ -18,7 +18,7 @@ FLAGS(sys.argv)
 import agents.movetobeacon as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 1500
+EPISODES = 200
 STEPS = 1_900
 
 
@@ -51,7 +51,7 @@ def main():
             print()
 
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - (EPISODES/2)))
+            epsilon = 1 - (ep/(EPISODES - (EPISODES/10)))
 
             obs = env.reset()
             step = 1
@@ -70,7 +70,7 @@ def main():
             done = False
             end = False
 
-            actualTime = 2.0
+            actualTime = 5.0
             timeForAction = 0.55
             lastTime = ((obs[0]).observation["game_loop"] / 16)
         
@@ -97,8 +97,9 @@ def main():
                     reward = agent.get_reward(obs[0], action)
 
                     print("Recompensa : ", reward)
-                    print("Estado : ", current_state)
                     print("Accion : ", action)
+                    print("Estado : ", current_state)
+                    print("Nuevo Estado: ", new_state)
                     print("---")
 
                     agent.update(obs[0], delta)
@@ -121,12 +122,13 @@ def main():
                         # get random action
                         action = np.random.randint(0, agent.get_num_actions())
 
+                    func = agent.get_action(obs[0], action)
                     actualTime = 0
 
                 else:
                     actualTime += delta
 
-                func = agent.get_action(obs[0], action)
+
                 obs = env.step(actions=[func])
                 
                 step += 1
