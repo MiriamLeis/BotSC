@@ -58,7 +58,7 @@ class Agent (DQNAgent):
     _NOT_QUEUED = [0]
     _QUEUED = [1]
 
-    _MOVE_VAL = 7
+    _MOVE_VAL = 5.5
     _RADIO_VAL = 20
     _RANGE_VAL = 5
 
@@ -89,7 +89,7 @@ class Agent (DQNAgent):
     '''
     def __init__(self, load=False):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 16
+        self.num_states = 12
 
         # initialize neural network
         DQNAgent.__init__(self, 
@@ -168,53 +168,59 @@ class Agent (DQNAgent):
             angleD = 360 - angleD
         
         # prepare state
-        state = [0,0,0,0,0,0,0,0, 0,0, 0,0,0,0, 0,0]
+        state = [0,0,0,0,0,0,0,0, 0,0,0,0]
 
+        # check dist
+        dist = self.__get_dist([stalkerx, stalkery], [zealotx, zealoty])
+
+        norm = 1 - ((dist - 4) / (55 - 5))
+        norm = round(norm,1)
         # check angle
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state[0] = 1
+            state[0] = norm
         elif angleD >= 22.5 and angleD < 67.5:
-            state[1] = 1
+            state[1] = norm
         elif angleD >= 67.5 and angleD < 112.5:
-            state[2] = 1
+            state[2] = norm
         elif angleD >= 112.5 and angleD < 157.5:
-            state[3] = 1
+            state[3] = norm
         elif angleD >= 157.5 and angleD < 202.5:
-            state[4] = 1
+            state[4] = norm
         elif angleD >= 202.5 and angleD < 247.5:
-            state[5] = 1
+            state[5] = norm
         elif angleD >= 247.5 and angleD < 292.5:
-            state[6] = 1
+            state[6] = norm
         elif angleD >= 292.5 and angleD < 337.5:
-            state[7] = 1
+            state[7] = norm
 
-        # check cooldown
+
+        self.current_can_shoot = True
+        """# check cooldown
         if self.__can_shoot(obs, units.Protoss.Stalker):
             state[8] = 1
             self.current_can_shoot = True
         else:
             self.current_can_shoot = False
         
-        # check dist
-        dist = self.__get_dist([stalkerx, stalkery], [zealotx, zealoty])
+
         if dist >= self._RADIO_VAL:
             state[9] = 0
         elif dist >= self._RANGE_VAL:
             state[9] = 0.5
         else:
-            state[9] = 1
+            state[9] = 1"""
 
         # check limits
-        if (stalkery - self._MOVE_VAL) < 5:
+        if (stalkery - self._MOVE_VAL) < 3.5:
+            state[8] = 1
+        if (stalkerx - self._MOVE_VAL) < 3.5:
+            state[9] = 1
+        if (stalkery + self._MOVE_VAL) > 44.5:
             state[10] = 1
-        if (stalkerx - self._MOVE_VAL) < 5:
+        if (stalkerx + self._MOVE_VAL) > 60.5:
             state[11] = 1
-        if (stalkery + self._MOVE_VAL) > 43:
-            state[12] = 1
-        if (stalkerx + self._MOVE_VAL) > 59:
-            state[13] = 1
             
-        # check hp
+        """# check hp
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         percentage = actual_enemy_totalHP / self.enemy_originalHP
         if percentage >= 0.75: 
@@ -229,7 +235,7 @@ class Agent (DQNAgent):
 
         #if percentage >= 0.75: 
         state[15] = 1
-        """elif percentage >= 0.3: 
+        elif percentage >= 0.3: 
             state[15] = 0.5
         else:
             state[15] = 0"""
@@ -254,7 +260,7 @@ class Agent (DQNAgent):
         #if diff > -5 and (action == 8) and self.last_can_shoot:
             #reward += 1
         
-        if self.dead:
+        if actual_ally_totalHP < self.ally_totalHP:
             reward += -1
             self.dead = False
 

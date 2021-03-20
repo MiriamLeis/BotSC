@@ -35,16 +35,10 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent()
+        agent = class_agent.Agent(False)
 
-        dq_agent = dq_network.DQNAgent(num_actions=agent.get_num_actions(),
-                                        num_states=agent.get_num_states(),
-                                        discount=class_agent.DISCOUNT,
-                                        rep_mem_size=class_agent.REPLAY_MEMORY_SIZE,
-                                        min_rep_mem_size=class_agent.MIN_REPLAY_MEMORY_SIZE,
-                                        update_time=class_agent.UPDATE_TARGET_EVERY, load =True)
 
-        dq_agent.loadModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
+        agent.loadModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
 
         epsilon = 1
         ep_rewards = [-200]
@@ -92,7 +86,7 @@ def main():
                     current_state = new_state
 
 
-                    casos = dq_agent.get_qs(current_state)
+                    casos = agent.get_qs(current_state)
                     action = np.argmax(casos)
 
                     func = agent.get_action(obs[0], action)

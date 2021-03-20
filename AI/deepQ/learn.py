@@ -15,10 +15,10 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import agents.movetobeacon as class_agent #change path as needed
+import agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 200
+EPISODES = 2000
 STEPS = 1_900
 
 
@@ -71,7 +71,7 @@ def main():
             end = False
 
             actualTime = 5.0
-            timeForAction = 0.55
+            timeForAction = 0.5
             lastTime = ((obs[0]).observation["game_loop"] / 16)
         
             ep += 1
