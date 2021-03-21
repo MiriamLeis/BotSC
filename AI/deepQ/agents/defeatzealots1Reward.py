@@ -364,6 +364,16 @@ class Agent (DQNAgent):
 
         return func
 
+    def check_action_available(self, obs, action, func):
+        if self.possible_actions[action] == self._ATTACK:
+            # ATTACK ACTION
+            if not (self._ATTACK_SCREEN in obs.observation.available_actions):
+                func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
+        else:
+            if not (self._MOVE_SCREEN in obs.observation.available_actions):
+                func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
+        return func
+
     def __get_group(self, obs, group_type):
         group = [unit for unit in obs.observation['feature_units'] 
                     if unit.unit_type == group_type]
