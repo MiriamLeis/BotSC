@@ -89,7 +89,7 @@ class Agent (DQNAgent):
     '''
     def __init__(self, load=False):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 12
+        self.num_states = 13
 
         # initialize neural network
         DQNAgent.__init__(self, 
@@ -168,7 +168,7 @@ class Agent (DQNAgent):
             angleD = 360 - angleD
         
         # prepare state
-        state = [0,0,0,0,0,0,0,0, 0,0,0,0]
+        state = [0,0,0,0,0,0,0,0, 0, 0,0,0,0]
 
         # check dist
         dist = self.__get_dist([stalkerx, stalkery], [zealotx, zealoty])
@@ -195,13 +195,13 @@ class Agent (DQNAgent):
 
 
         self.current_can_shoot = True
-        """# check cooldown
+        # check cooldown
         if self.__can_shoot(obs, units.Protoss.Stalker):
             state[8] = 1
             self.current_can_shoot = True
         else:
             self.current_can_shoot = False
-        
+        """
 
         if dist >= self._RADIO_VAL:
             state[9] = 0
@@ -256,9 +256,9 @@ class Agent (DQNAgent):
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
-            # check if we made some damage and we have shot with this action
-        #if diff > -5 and (action == 8) and self.last_can_shoot:
-            #reward += 1
+        # check if we made some damage and we have shot with this action
+        if actual_enemy_totalHP < self.enemy_totalHP:
+            reward += 1
         
         if actual_ally_totalHP < self.ally_totalHP:
             reward += -1
@@ -443,10 +443,14 @@ class Agent (DQNAgent):
         for unit in group:
             unitx += unit.x
             unity += unit.y
-        
-        unitx /= len(group)
-        unity /= len(group)
+        if len(group) < 0 or len(group) == 0:
+                       
+            unitx /= 1
+            unity /= 1
 
+        else:
+            unitx /= len(group)
+            unity /= len(group)
         return unitx, unity
 
     '''
