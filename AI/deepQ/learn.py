@@ -18,7 +18,7 @@ FLAGS(sys.argv)
 import agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 5
+EPISODES = 10
 STEPS = 1_900
 
 
