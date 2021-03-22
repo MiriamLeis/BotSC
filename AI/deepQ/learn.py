@@ -18,7 +18,7 @@ FLAGS(sys.argv)
 import agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 1200
+EPISODES = 5
 STEPS = 1_900
 
 
@@ -34,7 +34,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent(False)
+        agent = class_agent.Agent(True)
 
         epsilon = 1
         ep_rewards = [-200]
@@ -51,7 +51,7 @@ def main():
             print()
 
             # decay epsilon
-            epsilon = 1 - (ep/(EPISODES - (EPISODES/2)))
+            epsilon = 0
 
             obs = env.reset()
             step = 1

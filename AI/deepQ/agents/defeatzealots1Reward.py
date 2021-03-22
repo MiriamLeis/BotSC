@@ -108,7 +108,7 @@ class Agent (DQNAgent):
                             load=load)
         
         if load:
-            DQNAgent.loadModel(os.getcwd() + '/models/' + FILE_NAME + '.h5')
+            DQNAgent.loadModel(self, os.getcwd() + '/models/' + FILE_NAME + '.h5')
 
     '''
         Prepare basic parameters. This is called before start the episode.

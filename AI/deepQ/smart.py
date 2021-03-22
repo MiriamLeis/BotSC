@@ -94,7 +94,7 @@ def main():
                 else:
                     actualTime += delta
 
-                func = agent.get_action(obs[0], action)
+                func = agent.check_action_available(obs[0], action, func)
                 obs = env.step(actions=[func])
                     
                 step += 1
