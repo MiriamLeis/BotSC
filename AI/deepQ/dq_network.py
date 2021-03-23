@@ -12,8 +12,10 @@ from collections import deque
 MODEL_NAME = 'DEEP_Q'
 
 class DQNAgent:
-    def __init__(self, num_actions, num_states, discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, learn_every = 50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 0, hidden_nodes=25, num_hidden_layers = 1, load = False):
+    def __init__(self, num_actions, num_states, episodes,discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, learn_every = 50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 0, hidden_nodes=25, num_hidden_layers = 1, load = False):
         #parameters
+        self.num_actions = num_actions
+        self.total_episodes = episodes
         self.discount = discount
         self.rep_mem_size = rep_mem_size
         self.min_rep_mem_size = learn_every
@@ -28,11 +30,11 @@ class DQNAgent:
             # main model
             # model that we are not fitting every step
             # gets trained every step
-            self.model = self.create_model(num_states, num_actions, hidden_nodes, num_hidden_layers)
+            self.model = self.create_model(num_states, hidden_nodes, num_hidden_layers)
 
             # target model
             # this is what we .predict against every step
-            self.target_model = self.create_model(num_states, num_actions, hidden_nodes, num_hidden_layers)
+            self.target_model = self.create_model(num_states, hidden_nodes, num_hidden_layers)
             self.target_model.set_weights(self.model.get_weights()) # do it again after a while
 
         # deque -> array or list 
@@ -41,14 +43,14 @@ class DQNAgent:
         # track internally when we are ready to update target_model
         self.target_update_counter = 0
 
-    def create_model(self, num_states, num_actions, hidden_nodes = 25, num_hidden_layers = 1):
+    def create_model(self, num_states, hidden_nodes = 25, num_hidden_layers = 1):
         
         # layers
         inputs = Input(shape=(num_states,))
         x = Dense(hidden_nodes, activation='relu')(inputs)
         for i in range(1, num_hidden_layers):
             x = Dense(hidden_nodes + (20 * i), activation='relu')(x)
-        outputs = Dense(num_actions)(x)
+        outputs = Dense(self.num_actions)(x)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)
@@ -113,7 +115,24 @@ class DQNAgent:
         if self.target_update_counter > self.update_time:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
-            
+  
+    def get_max_action(self, state):
+            cases = self.get_qs(state)
+            print("Estado : ", state)
+            print("Acciones : ", cases)
+            return np.argmax(cases)
+
+    def choose_action(self, state):
+        if np.random.random() > self.epsilon:
+            # get maxium reward action
+            return self.get_max_action(state)
+        else:
+            # get random action
+            return np.random.randint(0, self.num_actions)
+        
+    def set_epsilon(self, episode):
+        self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 2)))
+
     def saveModel(self, filepath):
         keras.models.save_model(self.model, filepath)
 

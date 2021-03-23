@@ -22,6 +22,7 @@ from dq_network import DQNAgent
 
 MAP_NAME = 'DefeatZealotswithBlink'
 FILE_NAME = 'zealotsModel'
+EPISODES = 2_300
 
 
 '''
@@ -96,6 +97,7 @@ class Agent (DQNAgent):
         DQNAgent.__init__(self, 
                             num_actions=self.num_actions,
                             num_states=self.num_states,
+                            episodes=EPISODES,
                             discount=0.99,
                             rep_mem_size=50_000,        # How many last steps to keep for model training
                             min_rep_mem_size=150,       # Minimum number of steps in a memory to start learning
@@ -114,7 +116,9 @@ class Agent (DQNAgent):
     '''
         Prepare basic parameters. This is called before start the episode.
     '''
-    def prepare(self, obs):
+    def prepare(self, obs, episode):
+        DQNAgent.set_epsilon(self, episode=episode)
+
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.enemy_originalHP = self.enemy_totalHP
         self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
@@ -128,12 +132,20 @@ class Agent (DQNAgent):
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
     '''
-        Update basic values
+        Update basic values and train
     '''
     def update(self, obs, delta):
         self.last_can_shoot = self.current_can_shoot
         return
     
+    '''
+        Train agent
+    '''
+    def train(self, step, current_state, action, reward, new_state, done):
+        # Every step we update replay memory and train main network
+        DQNAgent.update_replay_memory(self, transition=(current_state, action, reward, new_state, done))
+        DQNAgent.train(self, step=step)
+
     '''
         Return agent number of actions
     '''

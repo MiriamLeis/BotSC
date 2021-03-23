@@ -1,26 +1,16 @@
-import numpy as np
 import math
 import os
+import numpy as np
 
+from pysc2.agents import base_agent
 from pysc2.lib import actions
 from pysc2.lib import features
 
-'''
-    Import Neural Network
-'''
-import sys
-sys.path.append('../')
-from dq_network import DQNAgent
-
-'''
-    Add these parameters mandatory
-'''
-# environment values
+from qtable import QTable
 
 MAP_NAME = 'MoveToBeacon'
 FILE_NAME = 'beaconModel'
 EPISODES = 100
-
 
 '''
     Agent class must have this methods:
@@ -28,7 +18,6 @@ EPISODES = 100
         class Agent:
             def preprare(obs)
             def update(obs, deltaTime)
-            def train(obs, step, current_state, action, reward, new_state, done)
             def get_num_actions()
             def get_num_states()
             def get_state(obs)
@@ -39,11 +28,7 @@ EPISODES = 100
             def check_done(obs, last_step)
 '''
 
-class Agent (DQNAgent):
-
-    '''
-        Useful variables 
-    '''
+class Agent(QTable):
 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
@@ -53,64 +38,46 @@ class Agent (DQNAgent):
     _MOVE_SCREEN = actions.FUNCTIONS.Attack_screen.id
     _SELECT_ARMY = actions.FUNCTIONS.select_army.id
 
+    _MOVE_UP = 0
+    _MOVE_DOWN = 1
+    _MOVE_RIGHT = 2
+    _MOVE_LEFT = 3
+    _MOVE_UP_RIGHT = 4
+    _MOVE_UP_LEFT = 5
+    _MOVE_DOWN_RIGHT = 6
+    _MOVE_DOWN_LEFT = 7
+
     _SELECT_ALL = [0]
     _NOT_QUEUED = [0]
     _QUEUED = [1]
 
     _MOVE_VAL = 3.5
 
-    _MOVE_UP = 0
-    _MOVE_UP_LEFT = 1
-    _MOVE_LEFT = 2
-    _MOVE_DOWN_LEFT = 3        
-    _MOVE_DOWN = 4
-    _MOVE_DOWN_RIGHT = 5
-    _MOVE_RIGHT = 6
-    _MOVE_UP_RIGHT =7
-
     possible_actions = [
         _MOVE_UP,
-        _MOVE_UP_LEFT,
-        _MOVE_LEFT,
-        _MOVE_DOWN_LEFT,
         _MOVE_DOWN,
-        _MOVE_DOWN_RIGHT,
         _MOVE_RIGHT,
-        _MOVE_UP_RIGHT
+        _MOVE_LEFT,
+        _MOVE_UP_RIGHT,
+        _MOVE_UP_LEFT,
+        _MOVE_DOWN_RIGHT,
+        _MOVE_DOWN_LEFT
     ]
-
-    '''
-        Initialize the agent
-    '''
+    
     def __init__(self, load=False):
-        self.num_actions = len(self.possible_actions)
-        self.num_states = 8
-
-        # initialize neural network
-        DQNAgent.__init__(self, 
-                            num_actions=self.num_actions,
-                            num_states=self.num_states,
-                            episodes=EPISODES,
-                            discount=0.99,
-                            rep_mem_size=50_000,        # How many last steps to keep for model training
-                            min_rep_mem_size=256,       # Minimum number of steps in a memory to start learning
-                            update_time=5,             # When we'll copy weights from main network to target.
-                            minibatch_size=64,
-                            learn_every=128,
-                            max_cases=1024,
-                            cases_to_delete=64,            # Maximum number of cases until we start to learn
-                            load=load)
-        
-        if load:
-            DQNAgent.loadModel(os.getcwd() + '/models/' + FILE_NAME + '.h5')
-
+        QTable.__init__(self, 
+                        actions=self.possible_actions, 
+                        episodes=EPISODES, 
+                        load_qt=load,
+                        load_st=load)
+    
     '''
         Prepare basic parameters.
         Return funcion for select army and initial action: move UP
-    '''
+    '''                    
     def prepare(self, obs, episode):
-        DQNAgent.set_epsilon(self, episode=episode)
-
+        QTable.set_epsilon(self, episode=episode)
+        
         beacon_new_pos = self.__get_beacon_pos(obs)
         self.beacon_actual_pos = [beacon_new_pos[0], beacon_new_pos[1]]
         self.oldDist = self.__get_dist(obs)
@@ -118,19 +85,16 @@ class Agent (DQNAgent):
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
     '''
-        Update basic values
+        Update basic values and train
     '''
-    def update(self, obs, delta, step, current_state, action, reward, new_state, done):
+    def update(self, obs, delta):
         self.oldDist = self.__get_dist(obs)
     
     '''
         Train agent
     '''
     def train(self, step, current_state, action, reward, new_state, done):
-        # Every step we update replay memory and train main network
-        DQNAgent.update_replay_memory(self, transition=(current_state, action, reward, new_state, done))
-        DQNAgent.train(self, step=step)
-
+        QTable.learn(self, state=current_state, action=action, reward=reward, state_=new_state)
     
     '''
         Return agent number of actions
@@ -153,34 +117,34 @@ class Agent (DQNAgent):
 
 
         direction = [beaconx-marinex, beacony - mariney]
-        np.linalg.norm(direction)
+        dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
         
         vector_1 = [0, -1]
+
+        np.linalg.norm(direction)
+
         angleD = self.__ang(vector_1, direction)
 
         if direction[0] > 0:
             angleD = 360 - angleD
 
-        dist = self.__get_dist(obs)
-        norm = 1 - ((dist - 4) / (55 - 5))
-        norm = round(norm,1)
-        state = [0,0,0,0,0,0,0,0]
+        state = -1
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state[0] = norm
+            state = 0
         elif angleD >= 22.5 and angleD < 67.5:
-            state[1] = norm
+            state = 1
         elif angleD >= 67.5 and angleD < 112.5:
-            state[2] = norm
+            state = 2
         elif angleD >= 112.5 and angleD < 157.5:
-            state[3] = norm
+            state = 3
         elif angleD >= 157.5 and angleD < 202.5:
-            state[4] = norm
+            state = 4
         elif angleD >= 202.5 and angleD < 247.5:
-            state[5] = norm
+            state = 5
         elif angleD >= 247.5 and angleD < 292.5:
-            state[6] = norm
+            state = 6
         elif angleD >= 292.5 and angleD < 337.5:
-            state[7] = norm
+            state = 7
 
         return state
 
@@ -207,10 +171,19 @@ class Agent (DQNAgent):
     '''
     def get_reward(self, obs, action):
         beacon_new_pos = self.__get_beacon_pos(obs)
-        reward = 0
+
         if self.beacon_actual_pos[0] != round(beacon_new_pos[0],1) or self.beacon_actual_pos[1] != round(beacon_new_pos[1],1):
             self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
-            reward = 1
+            # get beacon
+            reward = 5
+
+        else:
+            # distance between beacon and marine
+            marinex, mariney = self.__get_marine_pos(obs)
+            beaconx, beacony = self.__get_beacon_pos(obs)
+            dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
+
+            reward = self.oldDist - dist
 
         return reward
 
@@ -276,7 +249,7 @@ class Agent (DQNAgent):
         if not (self._MOVE_SCREEN in obs.observation.available_actions):
             func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
         return func
-    
+
     '''
         (Private method)
         Return marine position
@@ -338,4 +311,3 @@ class Agent (DQNAgent):
 
         newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
         return newDist
-

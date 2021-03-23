@@ -7,7 +7,8 @@ class QTable(object):
         self.epsilon = e_greedy
         self.gamma = reward_decay
         self.load_qt = load_qt
-        self.MaxEpisodes = episodes
+        self.total_episodes = episodes
+        
         if load_st:
             self.states_list = self.load_states(load_st)
             set(self.states_list)
@@ -18,6 +19,11 @@ class QTable(object):
             self.q_table = self.load_qtable(load_qt)
         else:
             self.q_table = np.zeros((0, len(self.actions))) # crea la tabla Q
+    
+    def get_max_action(self, state):
+        idx = list(self.states_list).index(state)
+        q_values = self.q_table[idx]
+        return int(np.argmax(q_values))
         
     def choose_action(self, state):
         self.check_state_exist(state)
@@ -25,9 +31,7 @@ class QTable(object):
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.actions)
         else:
-            idx = list(self.states_list).index(state)
-            q_values = self.q_table[idx]
-            return int(np.argmax(q_values))
+            return self.get_max_action(state)
     
     def learn(self, state, action, reward, state_):
         self.check_state_exist(state_)
@@ -67,5 +71,5 @@ class QTable(object):
     def print_QTable(self):
         print(self.q_table)
 
-    def set_actual_episode(self, episode):
-        self.epsilon = 1 - (episode/self.MaxEpisodes)
+    def set_epsilon(self, episode):
+        self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 2)))

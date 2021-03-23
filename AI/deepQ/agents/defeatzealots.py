@@ -22,6 +22,7 @@ from dq_network import DQNAgent
 
 MAP_NAME = 'DefeatZealotswithBlink'
 FILE_NAME = 'zealotsModel'
+EPISODES = 2_300
 
 
 '''
