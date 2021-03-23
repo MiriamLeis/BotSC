@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import random
 import itertools
+import os
 
 from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input
@@ -133,8 +134,8 @@ class DQNAgent:
     def set_epsilon(self, episode):
         self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 2)))
 
-    def saveModel(self, filepath):
-        keras.models.save_model(self.model, filepath)
+    def save(self, filepath):
+        keras.models.save_model(self.model, os.getcwd() + '\\deepQ\\models/\\' + filepath + '.h5')
 
     def loadModel(self, filepath):
         self.model = keras.models.load_model(filepath)

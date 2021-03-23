@@ -15,9 +15,11 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import agents.movetobeacon as class_agent #change path as needed
+import dq_network
+import deepQ.agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
+EPISODES = 100
 STEPS = 1_900
 
 
@@ -33,45 +35,31 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent()
+        agent = class_agent.Agent(True)
 
         random.seed(1)
         np.random.seed(1)
         tf.random.set_seed(1)
 
-        end = False
-        action = -1
-        current_state = -1
-        for episode in tqdm(range(1, class_agent.EPISODES+1), ascii=True, unit="episode"):
+        for episode in tqdm(range(1, EPISODES+1), ascii=True, unit="episode"):
             print()
 
             obs = env.reset()
             step = 1
             
-            if end:
-                # get and learn reward for last action
-                agent.train(step=step, 
-                            current_state=current_state, 
-                            action=action, 
-                            reward=agent.get_reward(obs[0], action), 
-                            new_state=agent.get_state(obs[0]), 
-                            done=agent.check_done(obs[0], STEPS-1))
-
-            # prepare new step
             func, action = agent.prepare(obs[0], episode - 1)
             current_state = agent.get_state(obs[0])
 
             obs = env.step(actions=[func])
-
+        
             done = False
             end = False
 
-            actualTime = 5.0
-            timeForAction = 0.5
+            actualTime = 2.0
+            timeForAction = 0.2
             lastTime = ((obs[0]).observation["game_loop"] / 16)
 
             for s in range(STEPS):
-                # leave episode if we ended
                 end = agent.get_end(obs[0])
                 if end:
                     break
@@ -82,44 +70,24 @@ def main():
                 lastTime = realTime
 
                 if actualTime >= timeForAction:
-                   # get new state
+                    # get new state
                     new_state = agent.get_state(obs[0])
 
-                    done = agent.check_done(obs[0], step == STEPS-1)
-
-                    # get reward of our action
-                    reward = agent.get_reward(obs[0], action)
-
-                    print("Recompensa : ", reward)
-                    print("Accion : ", action)
-                    print("Estado : ", current_state)
-                    print("Nuevo Estado: ", new_state)
-                    print("---")
-
-                    agent.update(obs[0], delta)
-                    agent.train(step=step, 
-                                current_state=current_state, 
-                                action=action, 
-                                reward=reward, 
-                                new_state=new_state, 
-                                done=done)
+                    done = agent.check_done(obs[0], STEPS-1)
 
                     current_state = new_state
 
-                    action = agent.choose_action(current_state)
+                    action = agent.get_max_action(current_state)
 
                     func = agent.get_action(obs[0], action)
-                    actualTime = 0.0
-
+                    actualTime = 0
                 else:
                     actualTime += delta
 
                 func = agent.check_action_available(obs[0], action, func)
                 obs = env.step(actions=[func])
-                
+                    
                 step += 1
-
-        agent.saveModel(os.getcwd() + '/models/' + class_agent.FILE_NAME + '.h5')
             
 
 main()

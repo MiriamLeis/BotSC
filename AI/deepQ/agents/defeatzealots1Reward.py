@@ -11,7 +11,7 @@ from pysc2.lib import units
     Import Neural Network
 '''
 import sys
-sys.path.append('../')
+sys.path.append('./deepQ/')
 from dq_network import DQNAgent
 
 '''
@@ -22,7 +22,7 @@ from dq_network import DQNAgent
 
 MAP_NAME = 'DefeatZealotswithBlink'
 FILE_NAME = 'zealotsModel'
-EPISODES = 2_300
+EPISODES = 1
 
 
 '''
@@ -111,7 +111,7 @@ class Agent (DQNAgent):
                             load=load)
         
         if load:
-            DQNAgent.loadModel(self, os.getcwd() + '/models/' + FILE_NAME + '.h5')
+            DQNAgent.loadModel(self, os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '.h5')
 
     '''
         Prepare basic parameters. This is called before start the episode.

@@ -11,7 +11,7 @@ sys.path.append('./QLearning/')
 from qtable import QTable
 
 MAP_NAME = 'MoveToBeacon'
-FILE_NAME = 'mtb'
+FILE_NAME = 'mtb8'
 EPISODES = 100
 
 '''
@@ -44,6 +44,10 @@ class Agent(QTable):
     _MOVE_DOWN = 1
     _MOVE_RIGHT = 2
     _MOVE_LEFT = 3
+    _MOVE_UP_RIGHT = 4
+    _MOVE_UP_LEFT = 5
+    _MOVE_DOWN_RIGHT = 6
+    _MOVE_DOWN_LEFT = 7
 
     _SELECT_ALL = [0]
     _NOT_QUEUED = [0]
@@ -55,7 +59,11 @@ class Agent(QTable):
         _MOVE_UP,
         _MOVE_DOWN,
         _MOVE_RIGHT,
-        _MOVE_LEFT
+        _MOVE_LEFT,
+        _MOVE_UP_RIGHT,
+        _MOVE_UP_LEFT,
+        _MOVE_DOWN_RIGHT,
+        _MOVE_DOWN_LEFT
     ]
     
     def __init__(self, load=False):
@@ -196,11 +204,25 @@ class Agent(QTable):
                 mariney += self._MOVE_VAL
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney - self._MOVE_VAL]])
 
+        elif self.possible_actions[action] == self._MOVE_UP_LEFT:
+            if(marinex  - self._MOVE_VAL < 3.5):
+                marinex += self._MOVE_VAL
+            if(mariney - self._MOVE_VAL < 3.5):
+                mariney +=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex-self._MOVE_VAL/2, mariney - self._MOVE_VAL/2]])
+
         elif self.possible_actions[action] == self._MOVE_LEFT:
             if(marinex - self._MOVE_VAL < 3.5):
                 marinex += self._MOVE_VAL
 
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex - self._MOVE_VAL, mariney]])
+
+        elif self.possible_actions[action] == self._MOVE_DOWN_LEFT:
+            if(marinex - self._MOVE_VAL < 3.5):
+                marinex +=self._MOVE_VAL
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex- self._MOVE_VAL/2, mariney + self._MOVE_VAL/2]])
 
         elif self.possible_actions[action] == self._MOVE_DOWN:
             if(mariney + self._MOVE_VAL > 44.5):
@@ -208,10 +230,23 @@ class Agent(QTable):
 
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney + self._MOVE_VAL]])
 
+        elif self.possible_actions[action] == self._MOVE_DOWN_RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex+ self._MOVE_VAL/2, mariney + self._MOVE_VAL/2]])
+
         elif self.possible_actions[action] == self._MOVE_RIGHT:
             if(marinex + self._MOVE_VAL > 60.5):
                 marinex -= self._MOVE_VAL
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex + self._MOVE_VAL, mariney]])
+        elif self.possible_actions[action] == self._MOVE_UP_RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            if(mariney - self._MOVE_VAL < 3.5):
+                mariney +=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex+self._MOVE_VAL/2, mariney - self._MOVE_VAL/2]])
 
         return func
 

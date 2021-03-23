@@ -1,24 +1,16 @@
 import numpy as np
+import os
 
 class QTable(object):
-    def __init__(self, actions, episodes,lr=0.2, reward_decay=0.95, e_greedy=0.9,load_qt=None, load_st=None ):
+    def __init__(self, actions, episodes,lr=0.2, reward_decay=0.95, e_greedy=0.9,load=False):
         self.lr = lr
         self.actions = actions
         self.epsilon = e_greedy
         self.gamma = reward_decay
-        self.load_qt = load_qt
         self.total_episodes = episodes
-        
-        if load_st:
-            self.states_list = self.load_states(load_st)
-            set(self.states_list)
-        else:
-            self.states_list = set()
-        
-        if load_qt:
-            self.q_table = self.load_qtable(load_qt)
-        else:
-            self.q_table = np.zeros((0, len(self.actions))) # crea la tabla Q
+
+        self.states_list = set()
+        self.q_table = np.zeros((0, len(self.actions))) # crea la tabla Q
     
     def get_max_action(self, state):
         idx = list(self.states_list).index(state)
@@ -55,18 +47,19 @@ class QTable(object):
             self.q_table = np.vstack([self.q_table, np.zeros((1, len(self.actions)))])
             self.states_list.add(state)
         
-    def save_qtable(self, filepath):
-        np.save(filepath, self.q_table)
-        
-    def load_qtable(self, filepath):
-        return np.load(filepath)
-        
-    def save_states(self, filepath):
+    def save(self, filepath):
+        filepath = os.getcwd() + '\\QLearning\\saves\\' + filepath
+
+        np.save(filepath + '_qtable', self.q_table)
         temp = np.array(list(self.states_list))
-        np.save(filepath, temp)
-        
+        np.save(filepath + '_states', temp)
+    
+    def load_qtable(self, filepath):
+        self.q_table = np.load(filepath)
+
     def load_states(self, filepath):
-        return np.load(filepath)
+        self.states_list = np.load(filepath)
+        set(self.states_list)
 
     def print_QTable(self):
         print(self.q_table)

@@ -9,7 +9,7 @@ from pysc2.lib import features
     Import Neural Network
 '''
 import sys
-sys.path.append('../')
+sys.path.append('./deepQ/')
 from dq_network import DQNAgent
 
 '''
@@ -102,7 +102,7 @@ class Agent (DQNAgent):
                             load=load)
         
         if load:
-            DQNAgent.loadModel(os.getcwd() + '/models/' + FILE_NAME + '.h5')
+            DQNAgent.loadModel(os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '.h5')
 
     '''
         Prepare basic parameters.
@@ -120,7 +120,7 @@ class Agent (DQNAgent):
     '''
         Update basic values
     '''
-    def update(self, obs, delta, step, current_state, action, reward, new_state, done):
+    def update(self, obs, delta):
         self.oldDist = self.__get_dist(obs)
     
     '''
