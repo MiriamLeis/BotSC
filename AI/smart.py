@@ -15,7 +15,6 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import dq_network
 import deepQ.agents.defeatzealots1Reward as class_agent #change path as needed
 
 # Environment settings
