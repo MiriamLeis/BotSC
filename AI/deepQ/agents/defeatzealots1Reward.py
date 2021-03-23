@@ -34,6 +34,7 @@ FILE_NAME = 'zealotsModel'
             def get_num_states()
             def get_state(obs)
             def get_action(obs)
+            def check_action_available(self, obs, action, func)
             def get_reward(obs, action)
             def get_end(obs)
             def check_done(obs, last_step)

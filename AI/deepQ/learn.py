@@ -15,10 +15,10 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import agents.defeatzealots1Reward as class_agent #change path as needed
+import agents.movetobeacon as class_agent #change path as needed
 
 # Environment settings
-EPISODES = 10
+EPISODES = 1_000
 STEPS = 1_900
 
 
@@ -34,7 +34,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent(True)
+        agent = class_agent.Agent(False)
 
         epsilon = 1
         ep_rewards = [-200]
@@ -51,7 +51,7 @@ def main():
             print()
 
             # decay epsilon
-            epsilon = 0
+            epsilon = ep / (EPISODES - (EPISODES/2))
 
             obs = env.reset()
             step = 1

@@ -31,6 +31,7 @@ FILE_NAME = 'beaconModel'
             def get_num_states()
             def get_state(obs)
             def get_action(obs)
+            def check_action_available(self, obs, action, func)
             def get_reward(obs, action)
             def get_end(obs)
             def check_done(obs, last_step)
@@ -255,6 +256,11 @@ class Agent (DQNAgent):
                 mariney +=self._MOVE_VAL
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex+self._MOVE_VAL/2, mariney - self._MOVE_VAL/2]])
 
+        return func
+
+    def check_action_available(self, obs, action, func):
+        if not (self._MOVE_SCREEN in obs.observation.available_actions):
+            func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
         return func
     
     '''
