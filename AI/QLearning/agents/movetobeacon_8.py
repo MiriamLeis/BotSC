@@ -205,14 +205,8 @@ class Agent(QTable):
             self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
             # get beacon
             reward = 1
-
-        #else:
-            # distance between beacon and marine
-            #marinex, mariney = self.__get_marine_pos(obs)
-            #beaconx, beacony = self.__get_beacon_pos(obs)
-            #dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
-
-            #reward = self.oldDist - dist
+        else:
+            reward = 0
 
         return reward
 

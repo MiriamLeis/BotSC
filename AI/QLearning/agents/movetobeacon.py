@@ -109,13 +109,39 @@ class Agent(QTable):
         Return agent state
     '''
     def get_state(self, obs):
+        state = -1
+        
         marinex, mariney = self.__get_marine_pos(obs)
         beaconx, beacony = self.__get_beacon_pos(obs)
-
 
         direction = [beaconx-marinex, beacony - mariney]
         dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
         
+        norm = 1 - ((dist - 4) / (55 - 5))
+        norm = round(norm,1)
+
+        if norm < 0.1:
+            state = 0
+        elif norm < 0.2:
+            state = 1
+        elif norm < 0.3:
+            state = 2
+        elif norm < 0.4:
+            state = 3
+        elif norm < 0.5:
+            state = 4
+        elif norm < 0.6:
+            state = 5
+        elif norm < 0.7:
+            state = 6
+        elif norm < 0.8:
+            state = 7
+        elif norm < 0.9:
+            state = 8
+        else:
+            state = 9
+        
+        # angle between marine and beacon
         vector_1 = [0, -1]
 
         np.linalg.norm(direction)
@@ -173,14 +199,8 @@ class Agent(QTable):
             self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
             # get beacon
             reward = 5
-
         else:
-            # distance between beacon and marine
-            marinex, mariney = self.__get_marine_pos(obs)
-            beaconx, beacony = self.__get_beacon_pos(obs)
-            dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
-
-            reward = self.oldDist - dist
+            reward = 0
 
         return reward
 
