@@ -11,7 +11,7 @@ from pysc2.lib import units
     Import Neural Network
 '''
 import sys
-sys.path.append('../')
+sys.path.append('./deepQ/')
 from dq_network import DQNAgent
 
 '''
@@ -22,7 +22,7 @@ from dq_network import DQNAgent
 
 MAP_NAME = 'DefeatZealotswithBlink'
 FILE_NAME = 'zealotsModel'
-EPISODES = 2_300
+EPISODES = 1
 
 
 '''
@@ -35,6 +35,7 @@ EPISODES = 2_300
             def get_num_states()
             def get_state(obs)
             def get_action(obs)
+            def check_action_available(self, obs, action, func)
             def get_reward(obs, action)
             def get_end(obs)
             def check_done(obs, last_step)
@@ -61,6 +62,7 @@ class Agent (DQNAgent):
 
     _MOVE_VAL = 5.5
     _RADIO_VAL = 20
+    _RANGE_VAL = 5
 
     _UP = 0
     _UP_LEFT = 1
@@ -87,51 +89,63 @@ class Agent (DQNAgent):
     '''
         Initialize the agent
     '''
-    def __init__(self, load):
+    def __init__(self, load=False):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 14
+        self.num_states = 13
 
         # initialize neural network
         DQNAgent.__init__(self, 
                             num_actions=self.num_actions,
                             num_states=self.num_states,
+                            episodes=EPISODES,
                             discount=0.99,
                             rep_mem_size=50_000,        # How many last steps to keep for model training
-                            min_rep_mem_size=300,       # Minimum number of steps in a memory to start learning
-                            update_time=100,             # When we'll copy weights from main network to target.
-                            minibatch_size=256,
-                            max_cases=10_000,            # Maximum number of cases until we start to learn
+                            min_rep_mem_size=150,       # Minimum number of steps in a memory to start learning
+                            learn_every=80,
+                            update_time=50,             # When we'll copy weights from main network to target.
+                            minibatch_size=64,
+                            max_cases=1_000,            # Maximum number of cases until we start to learn
                             cases_to_delete=100,        # Cases to delete when we surpassed cases limit.
                             hidden_nodes=100,
                             num_hidden_layers=2,
                             load=load)
         
         if load:
-            DQNAgent.loadModel(os.getcwd() + '/models/' + FILE_NAME + '.h5')
+            DQNAgent.loadModel(self, os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '.h5')
 
     '''
-        Prepare basic parameters.
+        Prepare basic parameters. This is called before start the episode.
     '''
-    def prepare(self, obs):
+    def prepare(self, obs, episode):
+        DQNAgent.set_epsilon(self, episode=episode)
+
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
+        self.enemy_originalHP = self.enemy_totalHP
         self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        self.ally_originalHP = self.ally_totalHP
         self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
-        self.current_can_shoot = False
+
         self.last_can_shoot = False
-        self.current_on_range = False
-        self.last_on_range = False
+        self.dead = False
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
 
     '''
-        Update basic values
+        Update basic values and train
     '''
     def update(self, obs, delta):
         self.last_can_shoot = self.current_can_shoot
-        self.last_on_range = self.current_on_range
         return
     
+    '''
+        Train agent
+    '''
+    def train(self, step, current_state, action, reward, new_state, done):
+        # Every step we update replay memory and train main network
+        DQNAgent.update_replay_memory(self, transition=(current_state, action, reward, new_state, done))
+        DQNAgent.train(self, step=step)
+
     '''
         Return agent number of actions
     '''
@@ -146,6 +160,11 @@ class Agent (DQNAgent):
     
     '''
         Return agent state
+        state:
+        [UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT, ------> enemy position
+        COOLDOWN, RANGE,
+        UP WALL, LEFT WALL, DOWN WALL, RIGHT WALL,
+        ENEMY HP, ALLY HP]
     '''
     def get_state(self, obs):
         stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
@@ -162,48 +181,78 @@ class Agent (DQNAgent):
             angleD = 360 - angleD
         
         # prepare state
-        state = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        state = [0,0,0,0,0,0,0,0, 0, 0,0,0,0]
 
+        # check dist
+        dist = self.__get_dist([stalkerx, stalkery], [zealotx, zealoty])
+
+        norm = 1 - ((dist - 4) / (55 - 5))
+        norm = round(norm,1)
         # check angle
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state[0] = 1
+            state[0] = norm
         elif angleD >= 22.5 and angleD < 67.5:
-            state[1] = 1
+            state[1] = norm
         elif angleD >= 67.5 and angleD < 112.5:
-            state[2] = 1
+            state[2] = norm
         elif angleD >= 112.5 and angleD < 157.5:
-            state[3] = 1
+            state[3] = norm
         elif angleD >= 157.5 and angleD < 202.5:
-            state[4] = 1
+            state[4] = norm
         elif angleD >= 202.5 and angleD < 247.5:
-            state[5] = 1
+            state[5] = norm
         elif angleD >= 247.5 and angleD < 292.5:
-            state[6] = 1
+            state[6] = norm
         elif angleD >= 292.5 and angleD < 337.5:
-            state[7] = 1
+            state[7] = norm
 
+
+        self.current_can_shoot = True
         # check cooldown
         if self.__can_shoot(obs, units.Protoss.Stalker):
             state[8] = 1
             self.current_can_shoot = True
         else:
             self.current_can_shoot = False
-        
-        # check dist
-        if self.__get_dist([stalkerx, stalkery], [zealotx, zealoty]) <= self._RADIO_VAL:
-            state[9] = 1
-            self.current_on_range = True
-        else:
-            self.current_on_range = False
+        """
 
+        if dist >= self._RADIO_VAL:
+            state[9] = 0
+        elif dist >= self._RANGE_VAL:
+            state[9] = 0.5
+        else:
+            state[9] = 1"""
+
+        # check limits
         if (stalkery - self._MOVE_VAL) < 3.5:
-            state[10] = 1
+            state[8] = 1
         if (stalkerx - self._MOVE_VAL) < 3.5:
-            state[11] = 1
+            state[9] = 1
         if (stalkery + self._MOVE_VAL) > 44.5:
-            state[12] = 1
+            state[10] = 1
         if (stalkerx + self._MOVE_VAL) > 60.5:
-            state[13] = 1
+            state[11] = 1
+            
+        """# check hp
+        actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
+        percentage = actual_enemy_totalHP / self.enemy_originalHP
+        if percentage >= 0.75: 
+            state[14] = 1
+        elif percentage >= 0.3: 
+            state[14] = 0.5
+        else:
+            state[14] = 0
+        
+        actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        percentage = actual_ally_totalHP / self.ally_originalHP
+
+        #if percentage >= 0.75: 
+        state[15] = 1
+        elif percentage >= 0.3: 
+            state[15] = 0.5
+        else:
+            state[15] = 0"""
+
         
         return state
 
@@ -213,55 +262,25 @@ class Agent (DQNAgent):
     def get_reward(self, obs, action):
         reward = 0
 
-        # reward for moving
-        stalker = self.__get_stalker(obs)
-        dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
-
-            # check if we arent on range but we can shot
-        if not self.last_on_range and self.last_can_shoot:
-            
-                # reward for getting close
-            if ((self.last_dist - dist) > 0):
-                reward += 1
-
-                # punishment for running away
-            else: 
-                reward -= 1
-
-            # check if we are on range
-        elif self.last_on_range:
-
-                # punishment for getting close
-            if ((self.last_dist - dist) >= 0):
-                reward -= 1
-
-                # reward for running away
-            elif not self.last_can_shoot:
-                reward += 2
-
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
         actual_enemy_onlyHP = self.__get_group_onlyHP(obs, units.Protoss.Zealot)
 
-            # check if zealots reapered
-        diffOnlyHP = (self.enemy_onlyHP - actual_enemy_onlyHP)
-        if diffOnlyHP < 0:
-            reward = 2
-            return reward
-
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
-            # check if we made some damage and we have shot with this action
-        if diff > -5 and (action == 8) and self.last_can_shoot:
-            reward += 2
-        elif diff < 0:
-            reward -= 1
+        # check if we made some damage and we have shot with this action
+        if actual_enemy_totalHP < self.enemy_totalHP:
+            reward += 1
+        
+        if actual_ally_totalHP < self.ally_totalHP:
+            reward += -1
+            self.dead = False
 
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
+        self.enemy_onlyHP = actual_enemy_onlyHP
         self.ally_totalHP = actual_ally_totalHP
-        self.last_dist = dist
 
         return reward
     
@@ -270,10 +289,11 @@ class Agent (DQNAgent):
     '''
     def get_end(self, obs):
         stalkers = self.__get_group(obs, units.Protoss.Stalker)
+        self.dead = not stalkers
         return not stalkers
 
     '''
-        Return if current action was done
+        Return
     '''
     def check_done(self, obs, last_step):
         stalkers = self.__get_group(obs, units.Protoss.Stalker)
@@ -357,6 +377,16 @@ class Agent (DQNAgent):
 
         return func
 
+    def check_action_available(self, obs, action, func):
+        if self.possible_actions[action] == self._ATTACK:
+            # ATTACK ACTION
+            if not (self._ATTACK_SCREEN in obs.observation.available_actions):
+                func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
+        else:
+            if not (self._MOVE_SCREEN in obs.observation.available_actions):
+                func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
+        return func
+
     def __get_group(self, obs, group_type):
         group = [unit for unit in obs.observation['feature_units'] 
                     if unit.unit_type == group_type]
@@ -436,10 +466,14 @@ class Agent (DQNAgent):
         for unit in group:
             unitx += unit.x
             unity += unit.y
-        
-        unitx /= len(group)
-        unity /= len(group)
+        if len(group) < 0 or len(group) == 0:
+                       
+            unitx /= 1
+            unity /= 1
 
+        else:
+            unitx /= len(group)
+            unity /= len(group)
         return unitx, unity
 
     '''

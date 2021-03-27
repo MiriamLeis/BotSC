@@ -10,7 +10,7 @@ class QTable(object):
         self.total_episodes = episodes
 
         self.states_list = set()
-        self.q_table = np.zeros((0, len(self.actions))) # crea la tabla Q
+        self.q_table = np.zeros((0, len(self.actions))) # create Q table
     
     def get_max_action(self, state):
         idx = list(self.states_list).index(state)
@@ -56,10 +56,17 @@ class QTable(object):
     
     def load_qtable(self, filepath):
         self.q_table = np.load(filepath)
+        print("Q TABLA")
+        print(type(self.q_table))
+        print(self.q_table)
 
     def load_states(self, filepath):
-        self.states_list = np.load(filepath)
-        set(self.states_list)
+        tmp_array = np.load(filepath)
+        for x in tmp_array:
+            self.states_list.add(x)
+        print("ESTADOS")
+        print(type(self.states_list))
+        print(self.states_list)
 
     def print_QTable(self):
         print(self.q_table)

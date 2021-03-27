@@ -12,7 +12,7 @@ from qtable import QTable
 
 MAP_NAME = 'MoveToBeacon'
 FILE_NAME = 'mtb8'
-EPISODES = 100
+EPISODES = 500
 
 '''
     Agent class must have this methods:
@@ -117,13 +117,39 @@ class Agent(QTable):
         Return agent state
     '''
     def get_state(self, obs):
+        state = -1
+
         marinex, mariney = self.__get_marine_pos(obs)
         beaconx, beacony = self.__get_beacon_pos(obs)
 
-
-        direction = [beaconx-marinex, beacony - mariney]
+        direction = [beaconx - marinex, beacony - mariney]
         dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
+
+        norm = 1 - ((dist - 4) / (55 - 5))
+        norm = round(norm,1)
+
+        if norm < 0.1:
+            state = 0
+        elif norm < 0.2:
+            state = 1
+        elif norm < 0.3:
+            state = 2
+        elif norm < 0.4:
+            state = 3
+        elif norm < 0.5:
+            state = 4
+        elif norm < 0.6:
+            state = 5
+        elif norm < 0.7:
+            state = 6
+        elif norm < 0.8:
+            state = 7
+        elif norm < 0.9:
+            state = 8
+        else:
+            state = 9
         
+        # angle between marine and beacon
         vector_1 = [0, -1]
 
         np.linalg.norm(direction)
@@ -132,24 +158,22 @@ class Agent(QTable):
 
         if direction[0] > 0:
             angleD = 360 - angleD
-
-        state = -1
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state = 0
+            state += 0
         elif angleD >= 22.5 and angleD < 67.5:
-            state = 1
+            state += 1 * 10
         elif angleD >= 67.5 and angleD < 112.5:
-            state = 2
+            state += 2 * 10
         elif angleD >= 112.5 and angleD < 157.5:
-            state = 3
+            state += 3 * 10
         elif angleD >= 157.5 and angleD < 202.5:
-            state = 4
+            state += 4 * 10
         elif angleD >= 202.5 and angleD < 247.5:
-            state = 5
+            state += 5 * 10
         elif angleD >= 247.5 and angleD < 292.5:
-            state = 6
+            state += 6 * 10
         elif angleD >= 292.5 and angleD < 337.5:
-            state = 7
+            state += 7 * 10
 
         return state
 
@@ -180,15 +204,15 @@ class Agent(QTable):
         if self.beacon_actual_pos[0] != round(beacon_new_pos[0],1) or self.beacon_actual_pos[1] != round(beacon_new_pos[1],1):
             self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
             # get beacon
-            reward = 5
+            reward = 1
 
-        else:
+        #else:
             # distance between beacon and marine
-            marinex, mariney = self.__get_marine_pos(obs)
-            beaconx, beacony = self.__get_beacon_pos(obs)
-            dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
+            #marinex, mariney = self.__get_marine_pos(obs)
+            #beaconx, beacony = self.__get_beacon_pos(obs)
+            #dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
 
-            reward = self.oldDist - dist
+            #reward = self.oldDist - dist
 
         return reward
 
