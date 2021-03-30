@@ -135,7 +135,7 @@ class DQNAgent:
         self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 2)))
 
     def save(self, filepath):
-        keras.models.save_model(self.model, os.getcwd() + '\\deepQ\\models/\\' + filepath + '.h5')
+        keras.models.save_model(self.model, os.getcwd() + '\\deepQ\\models\\' + filepath + '.h5')
 
     def loadModel(self, filepath):
         self.model = keras.models.load_model(filepath)

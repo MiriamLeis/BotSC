@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import QLearning.agents.movetobeacon_8 as class_agent #change path as needed
+import deepQ.agents.defeatzealots_2enemies as class_agent #change path as needed
 
 # Environment settings
 STEPS = 1_900
@@ -33,7 +33,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent(False)
+        agent = class_agent.Agent(True)
 
         random.seed(1)
         np.random.seed(1)
@@ -42,6 +42,8 @@ def main():
         end = False
         action = -1
         current_state = -1
+        episodesForSave = 50
+        ep = 0
         for episode in tqdm(range(1, class_agent.EPISODES+1), ascii=True, unit="episode"):
             print()
 
@@ -56,6 +58,10 @@ def main():
                             reward=agent.get_reward(obs[0], action), 
                             new_state=agent.get_state(obs[0]), 
                             done=agent.check_done(obs[0], STEPS-1))
+
+            if ep >= episodesForSave:
+                agent.save(class_agent.FILE_NAME + '\\' + str(episode))
+                ep = 0
 
             # prepare new step
             func, action = agent.prepare(obs[0], episode - 1)
@@ -116,8 +122,10 @@ def main():
 
                 func = agent.check_action_available(obs[0], action, func)
                 obs = env.step(actions=[func])
-                
+
                 step += 1
+
+            ep += 1
 
         agent.save(class_agent.FILE_NAME)
             

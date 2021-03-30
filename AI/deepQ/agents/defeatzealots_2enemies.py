@@ -21,8 +21,8 @@ from dq_network import DQNAgent
 # environment values
 
 MAP_NAME = 'DefeatZealotswithBlink'
-FILE_NAME = 'zealotsModel'
-EPISODES = 1
+FILE_NAME = 'zealots2enemiesModel'
+EPISODES = 1000
 
 
 '''
@@ -161,49 +161,62 @@ class Agent (DQNAgent):
     '''
         Return agent state
         state:
-        [UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT, ------> enemy position
+        [UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT, ------> enemies position
         UP WALL, LEFT WALL, DOWN WALL, RIGHT WALL,
         COOLDOWN]
     '''
     def get_state(self, obs):
-        stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
-        zealotx, zealoty = self.__get_meangroup_position(obs, units.Protoss.Zealot)
-
-        # get direction
-        direction = [zealotx- stalkerx, zealoty- stalkery]
-        np.linalg.norm(direction)
-
-        vector_1 = [0, -1]
-        angleD = self.__ang(vector_1, direction)
-
-        if direction[0] > 0:
-            angleD = 360 - angleD
-        
         # prepare state
-        state = [0,0,0,0,0,0,0,0, 0, 0,0,0,0]
+        state = [10,10,10,10,10,10,10,10, 0, 0,0,0,0]
 
-        # check dist
-        dist = self.__get_dist([stalkerx, stalkery], [zealotx, zealoty])
+        stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
+        zealots = self.__get_group(obs, units.Protoss.Zealot)
 
-        norm = 1 - ((dist - 4) / (55 - 5))
-        norm = round(norm,1)
-        # check angle
-        if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state[0] = norm
-        elif angleD >= 22.5 and angleD < 67.5:
-            state[1] = norm
-        elif angleD >= 67.5 and angleD < 112.5:
-            state[2] = norm
-        elif angleD >= 112.5 and angleD < 157.5:
-            state[3] = norm
-        elif angleD >= 157.5 and angleD < 202.5:
-            state[4] = norm
-        elif angleD >= 202.5 and angleD < 247.5:
-            state[5] = norm
-        elif angleD >= 247.5 and angleD < 292.5:
-            state[6] = norm
-        elif angleD >= 292.5 and angleD < 337.5:
-            state[7] = norm
+        for unit in zealots:
+            # get direction
+            direction = [unit.x - stalkerx, unit.y - stalkery]
+            np.linalg.norm(direction)
+
+            vector_1 = [0, -1]
+            angleD = self.__ang(vector_1, direction)
+
+            if direction[0] > 0:
+                angleD = 360 - angleD
+
+            # check dist
+            dist = self.__get_dist([stalkerx, stalkery], [unit.x, unit.y])
+
+            norm = 1 - ((dist - 4) / (55 - 5))
+            norm = round(norm, 1)
+            # check angle
+            if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
+                if state[0] > norm:
+                    state[0] = norm
+            elif angleD >= 22.5 and angleD < 67.5:
+                if state[1] > norm:
+                    state[1] = norm
+            elif angleD >= 67.5 and angleD < 112.5:
+                if state[2] > norm:
+                    state[2] = norm
+            elif angleD >= 112.5 and angleD < 157.5:
+                if state[3] > norm:
+                    state[3] = norm
+            elif angleD >= 157.5 and angleD < 202.5:
+                if state[4] > norm:
+                    state[4] = norm
+            elif angleD >= 202.5 and angleD < 247.5:
+                if state[5] > norm:
+                    state[5] = norm
+            elif angleD >= 247.5 and angleD < 292.5:
+                if state[6] > norm:
+                    state[6] = norm
+            elif angleD >= 292.5 and angleD < 337.5:
+                if state[7] > norm:
+                    state[7] = norm
+
+        for i in range(8):
+            if state[i] == 10:
+                state[i] = 0
 
         # check limits
         if (stalkery - self._MOVE_VAL) < 3.5:
@@ -222,7 +235,7 @@ class Agent (DQNAgent):
             self.current_can_shoot = True
         else:
             self.current_can_shoot = False
-
+        
         return state
 
     '''
