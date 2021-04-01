@@ -58,7 +58,8 @@ class Agent:
         _, state_1 = self.agent_1.prepare(obs, episode)
         _, state_2 = self.agent_2.prepare(obs, episode)
 
-        return (self.select_1, self.select_2), (state_1, state_2)
+        # first action is trash
+        return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), (state_1, state_2)
 
     '''
         Do step of the environment

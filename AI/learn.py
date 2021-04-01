@@ -64,7 +64,7 @@ def main():
                 ep = 0
 
             # prepare new step
-            func, action = agent.prepare(obs[0], episode - 1)
+            func, _ = agent.prepare(obs[0], episode - 1)
             current_state = agent.get_state(obs[0])
 
             obs = env.step(actions=[func])
