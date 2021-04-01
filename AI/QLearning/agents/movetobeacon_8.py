@@ -19,6 +19,7 @@ EPISODES = 500
 
         class Agent:
             def preprare(obs)
+            def step(env, func)
             def update(obs, deltaTime)
             def get_num_actions()
             def get_num_states()
@@ -88,6 +89,13 @@ class Agent(QTable):
         self.oldDist = self.__get_dist(obs)
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
+    
+    '''
+        Do step of the environment
+    '''
+    def step(self, env, func):
+        obs = env.step(actions=[func])
+        return obs, self.get_end(obs[0])
 
     '''
         Update basic values and train
@@ -268,6 +276,9 @@ class Agent(QTable):
 
         return func
 
+    '''
+        Return if current action is available in the environment
+    '''
     def check_action_available(self, obs, action, func):
         if not (self._MOVE_SCREEN in obs.observation.available_actions):
             func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])

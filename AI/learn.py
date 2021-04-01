@@ -74,7 +74,7 @@ def main():
 
             actualTime = 5.0
             timeForAction = 0.5
-            lastTime = ((obs[0]).observation["game_loop"] / 16)
+            lastTime = 0.0
 
             for s in range(STEPS):
                 # leave episode if we ended
@@ -85,6 +85,8 @@ def main():
                 # get deltaTime
                 realTime = ((obs[0]).observation["game_loop"] / 16)
                 delta = realTime - lastTime
+                if delta < 0:
+                    print('NEGATIVO')
                 lastTime = realTime
 
                 if actualTime >= timeForAction:
@@ -95,7 +97,7 @@ def main():
 
                     # get reward of our action
                     reward = agent.get_reward(obs[0], action)
-
+                    
                     print("Recompensa : ", reward)
                     print("Accion : ", action)
                     print("Estado : ", current_state)
@@ -121,13 +123,15 @@ def main():
                     actualTime += delta
 
                 func = agent.check_action_available(obs[0], action, func)
-                obs = env.step(actions=[func])
+
+                obs, end = agent.step(env, func)
+                if end:
+                    break
 
                 step += 1
 
             ep += 1
 
         agent.save(class_agent.FILE_NAME)
-            
 
 main()

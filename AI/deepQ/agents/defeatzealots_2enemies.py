@@ -30,6 +30,7 @@ EPISODES = 1000
 
         class Agent:
             def preprare(obs)
+            def step(env, func)
             def update(obs, deltaTime)
             def get_num_actions()
             def get_num_states()
@@ -130,13 +131,19 @@ class Agent (DQNAgent):
         self.dead = False
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
+    
+    '''
+        Do step of the environment
+    '''
+    def step(self, env, func):
+        obs = env.step(actions=[func])
+        return obs, self.get_end(obs[0])
 
     '''
-        Update basic values and train
+        Update basic values
     '''
     def update(self, obs, delta):
         self.last_can_shoot = self.current_can_shoot
-        return
     
     '''
         Train agent
@@ -359,6 +366,9 @@ class Agent (DQNAgent):
 
         return func
 
+    '''
+        Return if current action is available in the environment
+    '''
     def check_action_available(self, obs, action, func):
         if self.possible_actions[action] == self._ATTACK:
             # ATTACK ACTION
@@ -369,16 +379,19 @@ class Agent (DQNAgent):
                 func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
         return func
 
+    '''
+        (Private method)
+        Return specified group
+    '''
     def __get_group(self, obs, group_type):
         group = [unit for unit in obs.observation['feature_units'] 
                     if unit.unit_type == group_type]
         return group
 
-    def __get_stalker(self, obs):
-        stalkers = self.__get_group(obs, units.Protoss.Stalker)
-        return random.choice(stalkers)
-
-
+    '''
+        (Private method)
+        Return zealot with lowest healt (health + shield)
+    '''
     def __get_zealot(self, obs):
         zealots = self.__get_group(obs, units.Protoss.Zealot)
 
@@ -394,7 +407,6 @@ class Agent (DQNAgent):
         (Private method)
         Return totalHP of a group = (unit health plus unit shield)
     '''
-
     def __get_group_totalHP(self, obs, group_type):
         group = self.__get_group(obs, group_type)
         totalHP = 0
