@@ -90,7 +90,7 @@ class Agent (DQNAgent):
     '''
         Initialize the agent
     '''
-    def __init__(self, load=False, obs=None):
+    def __init__(self, load=False):
         self.num_actions = len(self.possible_actions)
         self.num_states = 13
 
