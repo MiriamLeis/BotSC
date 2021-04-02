@@ -7,7 +7,7 @@ from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.lib import units
 
-from defeatzealots_2enemies import Agent as internal_agent
+from deepQ.agents.defeatzealots_2enemies import Agent as internal_agent
 
 '''
     Add these parameters mandatory
@@ -41,9 +41,6 @@ class Agent:
         Initialize the agent
     '''
     def __init__(self, load=False):
-        self.select_1 = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
-        self.select_2 = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
-
         self.agent_1 = internal_agent()
         self.agent_2 = internal_agent()
         
@@ -58,8 +55,14 @@ class Agent:
         _, state_1 = self.agent_1.prepare(obs, episode)
         _, state_2 = self.agent_2.prepare(obs, episode)
 
+        # get units
+        group = [unit for unit in obs.observation['feature_units'] 
+                    if unit.unit_type == units.Protoss.Stalker]
+        self.unit_1 = group[0]
+        self.unit_2 = group[1]
+
         # first action is trash
-        return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), (state_1, state_2)
+        return actions.FunctionCall(actions.FUNCTIONS.select_army.id, [[0]]), (state_1, state_2)
 
     '''
         Do step of the environment
@@ -70,7 +73,7 @@ class Agent:
             self.end_1 = self.agent_1.get_end(obs[0])
 
             if not self.end_1:
-                obs = self.agent_1.step(env, actions=[func[0]])
+                obs, self.end_1 = self.agent_1.step(env, func[0])
 
         self.end_2 = self.agent_2.get_end(obs[0])
         if not self.end_2:
@@ -78,9 +81,10 @@ class Agent:
             self.end_2 = self.agent_2.get_end(obs[0])
 
             if not self.end_2:
-                obs = self.agent_2.step(env, actions=[func[1]])
+                obs, self.end_2 = self.agent_2.step(env, func[1])
+                self.end_1 = self.agent_1.get_end(obs[0])
 
-        return obs, self.get_end(obs)
+        return obs, self.end_1 and self.end_2
 
     '''
         Update basic values
@@ -88,37 +92,46 @@ class Agent:
     def update(self, obs, delta):
         self.agent_1.update(obs, delta)
         self.agent_2.update(obs, delta)
+
+        self.select_1 = actions.FUNCTIONS.select_point("select",(self.unit_1[1], self.unit_1[2]))
+        self.select_2 = actions.FUNCTIONS.select_point("select",(self.unit_2[1], self.unit_2[2]))
     
     '''
-        Train agent
+        Train agents (tuple)
     '''
     def train(self, step, current_state, action, reward, new_state, done):
         self.agent_1.train(step, current_state[0], action[0], reward[0], new_state[0], done[0])
         self.agent_2.train(step, current_state[1], action[1], reward[1], new_state[1], done[1])
+        
+    '''
+        Return actions choosen by our agents (tuple)
+    '''
+    def choose_action(self, current_state):
+        return (self.agent_1.choose_action(current_state[0]), self.agent_2.choose_action(current_state[1]))
 
     '''
-        Return agent number of actions
+        Return agents number of actions (tuple)
     '''
     def get_num_actions(self):
         return (self.agent_1.get_num_actions(), self.agent_2.get_num_actions())
     
     '''
-        Return agent number of states
+        Return agents number of states (tuple)
     '''
     def get_num_states(self):
         return (self.agent_1.get_num_states(), self.agent_2.get_num_states())
     
     '''
-        Return agent state
+        Return agents states (tuple)
     '''
     def get_state(self, obs):
         return (self.agent_1.get_state(obs), self.agent_2.get_state(obs))
 
     '''
-        Return reward
+        Return rewards (tuple)
     '''
     def get_reward(self, obs, action):
-        return (self.agent_1.get_reward(obs, action), self.agent_2.get_reward(obs, action))
+        return (self.agent_1.get_reward(obs, action[0]), self.agent_2.get_reward(obs, action[1]))
             
     '''
         Return if we must end this episode
@@ -127,7 +140,7 @@ class Agent:
         self.end_1 = self.agent_1.get_end(obs)
         self.end_2 = self.agent_2.get_end(obs)
 
-        return end_1 and end_2
+        return self.end_1 and self.end_2
 
     '''
         Return
@@ -139,11 +152,11 @@ class Agent:
         Return function of new action
     '''
     def get_action(self, obs, action):
-        return (self.agent_1.get_action(obs, action), self.agent_2.get_action(obs, action))
+        return (self.agent_1.get_action(obs, action[0]), self.agent_2.get_action(obs, action[1]))
         
     '''
         Return if current action is available in the environment
     '''
     def check_action_available(self, obs, action, func):
-        return (self.agent_1.check_action_available(obs, action, func), self.agent_2.check_action_available(obs, action, func))
+        return (self.agent_1.check_action_available(obs, action[0], func[0]), self.agent_2.check_action_available(obs, action[1], func[1]))
         

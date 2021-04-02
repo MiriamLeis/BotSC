@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import deepQ.agents.defeatzealots_2enemies as class_agent #change path as needed
+import deepQ.agents.defeatzealots_2vs2 as class_agent #change path as needed
 
 # Environment settings
 STEPS = 1_900
@@ -33,7 +33,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent(True)
+        agent = class_agent.Agent(False)
 
         random.seed(1)
         np.random.seed(1)
@@ -64,7 +64,7 @@ def main():
                 ep = 0
 
             # prepare new step
-            func, _ = agent.prepare(obs[0], episode - 1)
+            func, action = agent.prepare(obs[0], episode - 1)
             current_state = agent.get_state(obs[0])
 
             obs = env.step(actions=[func])
