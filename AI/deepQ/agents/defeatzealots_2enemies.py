@@ -90,9 +90,16 @@ class Agent (DQNAgent):
     '''
         Initialize the agent
     '''
-    def __init__(self, load=False):
+    def __init__(self, load=False, num_states=None, unit_type=units.Protoss.Stalker):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 13
+
+        #if u need to specify this outside agent
+        if num_states != None:
+            self.num_states = num_states
+        else:
+            self.num_states = 13
+        
+        self.unit_type = unit_type
 
         # initialize neural network
         DQNAgent.__init__(self, 
@@ -123,9 +130,9 @@ class Agent (DQNAgent):
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.enemy_originalHP = self.enemy_totalHP
         self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
-        self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        self.ally_totalHP = self.__get_group_totalHP(obs, self.unit_type)
         self.ally_originalHP = self.ally_totalHP
-        self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
+        self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, self.unit_type), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
         self.last_can_shoot = False
         self.dead = False
@@ -176,7 +183,7 @@ class Agent (DQNAgent):
         # prepare state
         state = [10,10,10,10,10,10,10,10, 0, 0,0,0,0]
 
-        stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
+        stalkerx, stalkery = self.__get_meangroup_position(obs, self.unit_type)
         zealots = self.__get_group(obs, units.Protoss.Zealot)
 
         for unit in zealots:
@@ -237,7 +244,7 @@ class Agent (DQNAgent):
 
         self.current_can_shoot = True
         # check cooldown
-        if self.__can_shoot(obs, units.Protoss.Stalker):
+        if self.__can_shoot(obs, self.unit_type):
             state[12] = 1
             self.current_can_shoot = True
         else:
@@ -253,7 +260,7 @@ class Agent (DQNAgent):
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
-        actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        actual_ally_totalHP = self.__get_group_totalHP(obs, self.unit_type)
         actual_enemy_onlyHP = self.__get_group_onlyHP(obs, units.Protoss.Zealot)
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
@@ -277,18 +284,18 @@ class Agent (DQNAgent):
         Return if we must end this episode
     '''
     def get_end(self, obs):
-        stalkers = self.__get_group(obs, units.Protoss.Stalker)
-        self.dead = not stalkers
-        return not stalkers
+        group = self.__get_group(obs, self.unit_type)
+        self.dead = not group
+        return not group
 
     '''
         Return
     '''
     def check_done(self, obs, last_step):
-        stalkers = self.__get_group(obs, units.Protoss.Stalker)
+        group = self.__get_group(obs, self.unit_type)
         zealots = self.__get_group(obs, units.Protoss.Zealot)
 
-        if last_step or not stalkers or not zealots:
+        if last_step or not group or not zealots:
             return True
 
         return False
@@ -308,7 +315,7 @@ class Agent (DQNAgent):
         else:
             # MOVING ACTION
             if self._MOVE_SCREEN in obs.observation.available_actions:
-                stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
+                stalkerx, stalkery = self.__get_meangroup_position(obs, self.unit_type)
 
                 if  self.possible_actions[action] == self._UP:
                     if(stalkery - self._MOVE_VAL < 3.5):
