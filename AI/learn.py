@@ -33,7 +33,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent(False)
+        agent = class_agent.Agent(True)
 
         random.seed(1)
         np.random.seed(1)

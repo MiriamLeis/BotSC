@@ -24,7 +24,8 @@ EPISODES = 1000
     Agent class must have this methods:
 
         class Agent:
-            def preprare(obs)
+            def save(filepath)
+            def prepare(obs)
             def update(obs, deltaTime)
             def get_num_actions()
             def get_num_states()
@@ -52,8 +53,12 @@ class Agent:
         self.agent_2 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_2)
         
         if load:
-            self.agent_1.loadModel(self, os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '_1.h5')
-            self.agent_2.loadModel(self, os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '_2.h5')
+            self.agent_1.loadModel(os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '_1.h5')
+            self.agent_2.loadModel(os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '_2.h5')
+    
+    def save(self, filepath):
+        self.agent_1.save(filepath + '_1')
+        self.agent_2.save(filepath + '_2')
 
     '''
         Prepare basic parameters. This is called before start the episode.
