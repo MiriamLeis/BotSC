@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import deepQ.agents.defeatzealots_2enemies as class_agent #change path as needed
+import deepQ.agents.defeatzealots_2vs2 as class_agent #change path as needed
 
 # Environment settings
 EPISODES = 100
@@ -76,6 +76,8 @@ def main():
 
                     current_state = new_state
 
+                    agent.update(obs[0], delta)
+
                     action = agent.get_max_action(current_state)
 
                     func = agent.get_action(obs[0], action)
@@ -84,7 +86,10 @@ def main():
                     actualTime += delta
 
                 func = agent.check_action_available(obs[0], action, func)
-                obs = env.step(actions=[func])
+
+                obs, end = agent.step(env, func)
+                if end:
+                    break
                     
                 step += 1
             

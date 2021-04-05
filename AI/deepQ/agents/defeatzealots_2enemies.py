@@ -242,7 +242,6 @@ class Agent (DQNAgent):
         if (stalkerx + self._MOVE_VAL) > 60.5:
             state[11] = 1
 
-        self.current_can_shoot = True
         # check cooldown
         if self.__can_shoot(obs, self.unit_type):
             state[12] = 1

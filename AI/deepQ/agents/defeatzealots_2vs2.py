@@ -75,7 +75,7 @@ class Agent:
 
         # first action is trash
         return actions.FunctionCall(actions.FUNCTIONS.select_army.id, [[0]]), (state_1, state_2)
-
+        
     '''
         Do step of the environment
     '''
@@ -86,7 +86,7 @@ class Agent:
             self.end_1 = self.agent_1.get_end(obs[0])
 
             if not self.end_1:
-                obs, self.end_1 = self.agent_1.step(env, func[0])
+                obs, self.end_1 = self.agent_1.step(env, self.agent_1.check_action_available(obs[0], self.action_1, func[0]))
                 
             self.end_2 = self.agent_2.get_end(obs[0])
 
@@ -96,7 +96,7 @@ class Agent:
             self.end_2 = self.agent_2.get_end(obs[0])
             
             if not self.end_2:
-                obs, self.end_2 = self.agent_2.step(env, func[1])
+                obs, self.end_2 = self.agent_2.step(env, self.agent_2.check_action_available(obs[0], self.action_2, func[1]))
 
         # check if agent1 died in these steps
         self.end_1 = self.agent_1.get_end(obs[0])
@@ -117,9 +117,9 @@ class Agent:
 
         # set select actions
         if not self.end_1:
-            self.select_1 = actions.FUNCTIONS.select_point("select",(self.unit_1[1], self.unit_1[2]))
+            self.select_1 = actions.FUNCTIONS.select_point("select",(self.unit_1.x, self.unit_1.y))
         if not self.end_2:
-            self.select_2 = actions.FUNCTIONS.select_point("select",(self.unit_2[1], self.unit_2[2]))
+            self.select_2 = actions.FUNCTIONS.select_point("select",(self.unit_2.x, self.unit_2.y))
     
     '''
         Train agents (tuple)
@@ -129,12 +129,22 @@ class Agent:
             self.agent_1.train(step, current_state[0], action[0], reward[0], new_state[0], done[0])
         if not self.end_2:
             self.agent_2.train(step, current_state[1], action[1], reward[1], new_state[1], done[1])
-        
+
+    '''
+        Return actions with maxium reward (tuple)
+    '''
+    def get_max_action(self, state):
+        self.action_1 = self.agent_1.get_max_action(state[0])
+        self.action_2 = self.agent_2.get_max_action(state[1])
+        return (self.action_1, self.action_2)
+
     '''
         Return actions choosen by our agents (tuple)
     '''
     def choose_action(self, current_state):
-        return (self.agent_1.choose_action(current_state[0]), self.agent_2.choose_action(current_state[1]))
+        self.action_1 = self.agent_1.choose_action(current_state[0])
+        self.action_2 = self.agent_2.choose_action(current_state[1])
+        return (self.action_1, self.action_2)
 
     '''
         Return agents number of actions (tuple)

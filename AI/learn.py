@@ -33,7 +33,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent(True)
+        agent = class_agent.Agent(False)
 
         random.seed(1)
         np.random.seed(1)
@@ -105,6 +105,7 @@ def main():
                     print("---")
 
                     agent.update(obs[0], delta)
+                    
                     agent.train(step=step, 
                                 current_state=current_state, 
                                 action=action, 
@@ -115,7 +116,7 @@ def main():
                     current_state = new_state
 
                     action = agent.choose_action(current_state)
-
+                    
                     func = agent.get_action(obs[0], action)
                     actualTime = 0.0
 
@@ -123,7 +124,6 @@ def main():
                     actualTime += delta
 
                 func = agent.check_action_available(obs[0], action, func)
-
                 obs, end = agent.step(env, func)
                 if end:
                     break
