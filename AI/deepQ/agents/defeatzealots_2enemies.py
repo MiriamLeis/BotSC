@@ -308,7 +308,8 @@ class Agent (DQNAgent):
         if self.possible_actions[action] == self._ATTACK:
             # ATTACK ACTION
             if self._ATTACK_SCREEN in obs.observation.available_actions:
-                zealot = self.__get_zealot(obs)
+                stalkerx, stalkery = self.__get_meangroup_position(obs, self.unit_type)
+                zealot = self.__get_zealot(obs, [stalkerx,stalkery])
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         else:
@@ -398,13 +399,12 @@ class Agent (DQNAgent):
         (Private method)
         Return zealot with lowest healt (health + shield)
     '''
-    def __get_zealot(self, obs):
+    def __get_zealot(self, obs, stalker):
         zealots = self.__get_group(obs, units.Protoss.Zealot)
-
         # search who has lower hp and lower shield
         target = zealots[0]
         for i in range(1, len(zealots)):
-            if zealots[i].health < target.health or (zealots[i].health == target.health and zealots[i].shield < target.shield) :
+            if self.__get_dist([stalker[0], stalker[1]], [zealots[i].x, zealots[i].y]) < self.__get_dist([stalker[0], stalker[1]], [target.x, target.y]) :
                 target = zealots[i]
                 
         return target
