@@ -20,7 +20,7 @@ from dq_network import DQNAgent
 
 # environment values
 
-MAP_NAME = 'DefeatZealotswithBlink'
+MAP_NAME = 'DefeatZealotswithBlink_2enemies'
 FILE_NAME = 'zealots2enemiesModel'
 EPISODES = 1000
 

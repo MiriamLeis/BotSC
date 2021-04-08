@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import deepQ.agents.defeatzealots_2vs2 as class_agent #change path as needed
+import deepQ.agents.defeatzealots_2enemies as class_agent #change path as needed
 
 # Environment settings
 EPISODES = 100
