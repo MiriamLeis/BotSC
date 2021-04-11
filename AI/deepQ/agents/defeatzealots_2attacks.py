@@ -7,12 +7,10 @@ from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.lib import units
 
-'''
-    Import Neural Network
-'''
 import sys
 sys.path.append('./deepQ/')
 from dq_network import DQNAgent
+
 
 '''
     Add these parameters mandatory
@@ -20,9 +18,9 @@ from dq_network import DQNAgent
 
 # environment values
 
-MAP_NAME = 'DefeatZealotswithBlink'
-FILE_NAME = 'zealotsModel'
-EPISODES = 1
+MAP_NAME = 'DefeatZealotswithBlink_2enemies'
+FILE_NAME = 'zealots2enemiesModel'
+EPISODES = 1000
 
 
 '''
@@ -73,7 +71,8 @@ class Agent (DQNAgent):
     _DOWN_RIGHT = 5
     _RIGHT = 6
     _UP_RIGHT = 7
-    _ATTACK = 8
+    _ATTACK_CLOSEST = 8
+    _ATTACK_LOWEST = 9
 
     possible_actions = [
         _UP,
@@ -84,15 +83,23 @@ class Agent (DQNAgent):
         _DOWN_RIGHT,
         _RIGHT,
         _UP_RIGHT,
-        _ATTACK
+        _ATTACK_CLOSEST,
+        _ATTACK_LOWEST
     ]
 
     '''
         Initialize the agent
     '''
-    def __init__(self, load=False):
+    def __init__(self, load=False, num_states=None, unit_type=units.Protoss.Stalker):
         self.num_actions = len(self.possible_actions)
-        self.num_states = 13
+
+        #if u need to specify this outside agent
+        if num_states != None:
+            self.num_states = num_states
+        else:
+            self.num_states = 13
+        
+        self.unit_type = unit_type
 
         # initialize neural network
         DQNAgent.__init__(self, 
@@ -118,20 +125,23 @@ class Agent (DQNAgent):
         Prepare basic parameters. This is called before start the episode.
     '''
     def prepare(self, obs, episode):
+
         DQNAgent.set_epsilon(self, episode=episode)
 
         self.enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
         self.enemy_originalHP = self.enemy_totalHP
         self.enemy_onlyHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
-        self.ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        self.ally_totalHP = self.__get_group_totalHP(obs, self.unit_type)
         self.ally_originalHP = self.ally_totalHP
-        self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, units.Protoss.Stalker), self.__get_meangroup_position(obs, units.Protoss.Zealot))
+        self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, self.unit_type), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
-        self.last_can_shoot = False
+        self.last_can_shoot = True
         self.dead = False
 
+        self.current_enemies = 2
+
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
-    
+
     '''
         Do step of the environment
     '''
@@ -140,11 +150,10 @@ class Agent (DQNAgent):
         return obs, self.get_end(obs[0])
 
     '''
-        Update basic values and train
+        Update basic values
     '''
     def update(self, obs, delta):
         self.last_can_shoot = self.current_can_shoot
-        return
     
     '''
         Train agent
@@ -169,49 +178,62 @@ class Agent (DQNAgent):
     '''
         Return agent state
         state:
-        [UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT, ------> enemy position
+        [UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT, ------> enemies position
         UP WALL, LEFT WALL, DOWN WALL, RIGHT WALL,
         COOLDOWN]
     '''
     def get_state(self, obs):
-        stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
-        zealotx, zealoty = self.__get_meangroup_position(obs, units.Protoss.Zealot)
-
-        # get direction
-        direction = [zealotx- stalkerx, zealoty- stalkery]
-        np.linalg.norm(direction)
-
-        vector_1 = [0, -1]
-        angleD = self.__ang(vector_1, direction)
-
-        if direction[0] > 0:
-            angleD = 360 - angleD
-        
         # prepare state
-        state = [0,0,0,0,0,0,0,0, 0, 0,0,0,0]
+        state = [10,10,10,10,10,10,10,10, 0, 0,0,0,0]
 
-        # check dist
-        dist = self.__get_dist([stalkerx, stalkery], [zealotx, zealoty])
+        stalkerx, stalkery = self.__get_meangroup_position(obs, self.unit_type)
+        zealots = self.__get_group(obs, units.Protoss.Zealot)
 
-        norm = 1 - ((dist - 4) / (55 - 5))
-        norm = round(norm,1)
-        # check angle
-        if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state[0] = norm
-        elif angleD >= 22.5 and angleD < 67.5:
-            state[1] = norm
-        elif angleD >= 67.5 and angleD < 112.5:
-            state[2] = norm
-        elif angleD >= 112.5 and angleD < 157.5:
-            state[3] = norm
-        elif angleD >= 157.5 and angleD < 202.5:
-            state[4] = norm
-        elif angleD >= 202.5 and angleD < 247.5:
-            state[5] = norm
-        elif angleD >= 247.5 and angleD < 292.5:
-            state[6] = norm
-        elif angleD >= 292.5 and angleD < 337.5:
-            state[7] = norm
+        for unit in zealots:
+            # get direction
+            direction = [unit.x - stalkerx, unit.y - stalkery]
+            np.linalg.norm(direction)
+
+            vector_1 = [0, -1]
+            angleD = self.__ang(vector_1, direction)
+
+            if direction[0] > 0:
+                angleD = 360 - angleD
+
+            # check dist
+            dist = self.__get_dist([stalkerx, stalkery], [unit.x, unit.y])
+
+            norm = 1 - ((dist - 4) / (55 - 5))
+            norm = round(norm, 1)
+            # check angle
+            if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
+                if state[0] > norm:
+                    state[0] = norm
+            elif angleD >= 22.5 and angleD < 67.5:
+                if state[1] > norm:
+                    state[1] = norm
+            elif angleD >= 67.5 and angleD < 112.5:
+                if state[2] > norm:
+                    state[2] = norm
+            elif angleD >= 112.5 and angleD < 157.5:
+                if state[3] > norm:
+                    state[3] = norm
+            elif angleD >= 157.5 and angleD < 202.5:
+                if state[4] > norm:
+                    state[4] = norm
+            elif angleD >= 202.5 and angleD < 247.5:
+                if state[5] > norm:
+                    state[5] = norm
+            elif angleD >= 247.5 and angleD < 292.5:
+                if state[6] > norm:
+                    state[6] = norm
+            elif angleD >= 292.5 and angleD < 337.5:
+                if state[7] > norm:
+                    state[7] = norm
+
+        for i in range(8):
+            if state[i] == 10:
+                state[i] = 0
 
         # check limits
         if (stalkery - self._MOVE_VAL) < 3.5:
@@ -223,14 +245,13 @@ class Agent (DQNAgent):
         if (stalkerx + self._MOVE_VAL) > 60.5:
             state[11] = 1
 
-        self.current_can_shoot = True
         # check cooldown
-        if self.__can_shoot(obs, units.Protoss.Stalker):
+        if self.__can_shoot(obs, self.unit_type):
             state[12] = 1
             self.current_can_shoot = True
         else:
             self.current_can_shoot = False
-
+        
         return state
 
     '''
@@ -241,13 +262,13 @@ class Agent (DQNAgent):
 
         # reward for attacking
         actual_enemy_totalHP = self.__get_group_totalHP(obs, units.Protoss.Zealot)
-        actual_ally_totalHP = self.__get_group_totalHP(obs, units.Protoss.Stalker)
+        actual_ally_totalHP = self.__get_group_totalHP(obs, self.unit_type)
         actual_enemy_onlyHP = self.__get_group_onlyHP(obs, units.Protoss.Zealot)
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
         # check if we made some damage and we have shot with this action
-        if actual_enemy_totalHP < self.enemy_totalHP and action == _ATTACK:
+        if actual_enemy_totalHP < self.enemy_totalHP and (action == self._ATTACK_CLOSEST or action == self._ATTACK_LOWEST) and self.last_can_shoot:
             reward += 1
         
         if actual_ally_totalHP < self.ally_totalHP:
@@ -259,27 +280,36 @@ class Agent (DQNAgent):
         self.enemy_onlyHP = actual_enemy_onlyHP
         self.ally_totalHP = actual_ally_totalHP
 
+        zealots = self.__get_group(obs, units.Protoss.Zealot)
+
+        if self.current_enemies != len(zealots):
+            reward += 2
+            self.current_enemies = len(zealots)
+            if len(zealots) == 0:
+                print("hola")
+
         return reward
-    
+
     '''
         Return if we must end this episode
     '''
     def get_end(self, obs):
-        stalkers = self.__get_group(obs, units.Protoss.Stalker)
-        self.dead = not stalkers
-        return not stalkers
+        group = self.__get_group(obs, self.unit_type)
+        self.dead = not group
+        return not group
 
     '''
         Return
     '''
     def check_done(self, obs, last_step):
-        stalkers = self.__get_group(obs, units.Protoss.Stalker)
+        group = self.__get_group(obs, self.unit_type)
         zealots = self.__get_group(obs, units.Protoss.Zealot)
 
-        if last_step or not stalkers or not zealots:
+        if last_step or not group or not zealots:
             return True
 
         return False
+
 
     '''
         Return function of new action
@@ -287,16 +317,24 @@ class Agent (DQNAgent):
     def get_action(self, obs, action):
         func = actions.FunctionCall(self._NO_OP, [])
 
-        if self.possible_actions[action] == self._ATTACK:
+        if self.possible_actions[action] == self._ATTACK_CLOSEST:
             # ATTACK ACTION
             if self._ATTACK_SCREEN in obs.observation.available_actions:
-                zealot = self.__get_zealot(obs)
+                stalkerx, stalkery = self.__get_meangroup_position(obs, self.unit_type)
+                zealot = self.__get_zealot(obs, [stalkerx,stalkery])
+                func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
+
+        elif self.possible_actions[action] == self._ATTACK_LOWEST:
+            # ATTACK ACTION
+            if self._ATTACK_SCREEN in obs.observation.available_actions:
+                stalkerx, stalkery = self.__get_meangroup_position(obs, self.unit_type)
+                zealot = self.__get_zealot_lowest(obs, [stalkerx,stalkery])
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         else:
             # MOVING ACTION
             if self._MOVE_SCREEN in obs.observation.available_actions:
-                stalkerx, stalkery = self.__get_meangroup_position(obs, units.Protoss.Stalker)
+                stalkerx, stalkery = self.__get_meangroup_position(obs, self.unit_type)
 
                 if  self.possible_actions[action] == self._UP:
                     if(stalkery - self._MOVE_VAL < 3.5):
@@ -358,7 +396,7 @@ class Agent (DQNAgent):
         Return if current action is available in the environment
     '''
     def check_action_available(self, obs, action, func):
-        if self.possible_actions[action] == self._ATTACK:
+        if self.possible_actions[action] == self._ATTACK_CLOSEST or self._ATTACK_LOWEST:
             # ATTACK ACTION
             if not (self._ATTACK_SCREEN in obs.observation.available_actions):
                 func = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
@@ -380,13 +418,26 @@ class Agent (DQNAgent):
         (Private method)
         Return zealot with lowest healt (health + shield)
     '''
-    def __get_zealot(self, obs):
+    def __get_zealot(self, obs, stalker):
         zealots = self.__get_group(obs, units.Protoss.Zealot)
-
         # search who has lower hp and lower shield
         target = zealots[0]
         for i in range(1, len(zealots)):
-            if zealots[i].health < target.health or (zealots[i].health == target.health and zealots[i].shield < target.shield) :
+            if self.__get_dist([stalker[0], stalker[1]], [zealots[i].x, zealots[i].y]) < self.__get_dist([stalker[0], stalker[1]], [target.x, target.y]) :
+                target = zealots[i]
+                
+        return target
+
+    '''
+        (Private method)
+        Return zealot with lowest healt (health + shield)
+    '''
+    def __get_zealot_lowest(self, obs, stalker):
+        zealots = self.__get_group(obs, units.Protoss.Zealot)
+        # search who has lower hp and lower shield
+        target = zealots[0]
+        for i in range(1, len(zealots)):
+            if zealots[i].health < target.health or (zealots[i].health == target.health and zealots[i].shield < target.shield):
                 target = zealots[i]
                 
         return target
@@ -395,7 +446,6 @@ class Agent (DQNAgent):
         (Private method)
         Return totalHP of a group = (unit health plus unit shield)
     '''
-
     def __get_group_totalHP(self, obs, group_type):
         group = self.__get_group(obs, group_type)
         totalHP = 0
