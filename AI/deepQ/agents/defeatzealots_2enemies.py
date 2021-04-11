@@ -134,7 +134,7 @@ class Agent (DQNAgent):
         self.ally_originalHP = self.ally_totalHP
         self.last_dist = self.__get_dist(self.__get_meangroup_position(obs, self.unit_type), self.__get_meangroup_position(obs, units.Protoss.Zealot))
 
-        self.last_can_shoot = False
+        self.last_can_shoot = True
         self.dead = False
 
         return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
@@ -265,7 +265,7 @@ class Agent (DQNAgent):
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
         # check if we made some damage and we have shot with this action
-        if actual_enemy_totalHP < self.enemy_totalHP:
+        if actual_enemy_totalHP < self.enemy_totalHP and action == self._ATTACK and self.last_can_shoot:
             reward += 1
         
         if actual_ally_totalHP < self.ally_totalHP:
@@ -404,7 +404,7 @@ class Agent (DQNAgent):
         # search who has lower hp and lower shield
         target = zealots[0]
         for i in range(1, len(zealots)):
-            if self.__get_dist([stalker[0], stalker[1]], [zealots[i].x, zealots[i].y]) < self.__get_dist([stalker[0], stalker[1]], [target.x, target.y]) :
+            if zealots[i].health < target.health or (zealots[i].health == target.health and zealots[i].shield < target.shield):
                 target = zealots[i]
                 
         return target

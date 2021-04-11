@@ -7,7 +7,7 @@ from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.lib import units
 
-from deepQ.agents.defeatzealots_2enemies import Agent as internal_agent
+from deepQ.agents.defeatzealots_2attacks import Agent as internal_agent
 
 '''
     Add these parameters mandatory
@@ -40,7 +40,7 @@ EPISODES = 1000
 class Agent:
 
     TYPE_AGENT_1 = units.Protoss.Stalker
-    TYPE_AGENT_2 = units.Terran.Ghost
+    TYPE_AGENT_2 = units.Terran.Hellion
 
     '''
         Initialize the agent
