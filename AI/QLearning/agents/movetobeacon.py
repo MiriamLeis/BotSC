@@ -12,7 +12,7 @@ from qtable import QTable
 
 MAP_NAME = 'MoveToBeacon'
 FILE_NAME = 'mtb'
-EPISODES = 100
+EPISODES = 500
 
 '''
     Agent class must have this methods:
@@ -163,19 +163,19 @@ class Agent(QTable):
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
             state = 0
         elif angleD >= 22.5 and angleD < 67.5:
-            state = 1
+            state = 1 * 10
         elif angleD >= 67.5 and angleD < 112.5:
-            state = 2
+            state = 2 * 10
         elif angleD >= 112.5 and angleD < 157.5:
-            state = 3
+            state = 3 * 10
         elif angleD >= 157.5 and angleD < 202.5:
-            state = 4
+            state = 4 * 10
         elif angleD >= 202.5 and angleD < 247.5:
-            state = 5
+            state = 5 * 10
         elif angleD >= 247.5 and angleD < 292.5:
-            state = 6
+            state = 6 * 10
         elif angleD >= 292.5 and angleD < 337.5:
-            state = 7
+            state = 7 * 10
 
         return state
 
