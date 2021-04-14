@@ -45,6 +45,10 @@ class Agent(QTable):
     _MOVE_DOWN = 1
     _MOVE_RIGHT = 2
     _MOVE_LEFT = 3
+    _MOVE_UP_RIGHT = 4
+    _MOVE_UP_LEFT = 5
+    _MOVE_DOWN_RIGHT = 6
+    _MOVE_DOWN_LEFT = 7
 
     _SELECT_ALL = [0]
     _NOT_QUEUED = [0]
@@ -56,7 +60,11 @@ class Agent(QTable):
         _MOVE_UP,
         _MOVE_DOWN,
         _MOVE_RIGHT,
-        _MOVE_LEFT
+        _MOVE_LEFT,
+        _MOVE_UP_RIGHT,
+        _MOVE_UP_LEFT,
+        _MOVE_DOWN_RIGHT,
+        _MOVE_DOWN_LEFT
     ]
     
     def __init__(self, load=False):
@@ -118,13 +126,13 @@ class Agent(QTable):
     '''
     def get_state(self, obs):
         state = -1
-        
+
         marinex, mariney = self.__get_marine_pos(obs)
         beaconx, beacony = self.__get_beacon_pos(obs)
 
-        direction = [beaconx-marinex, beacony - mariney]
+        direction = [beaconx - marinex, beacony - mariney]
         dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
-        
+
         norm = 1 - ((dist - 4) / (55 - 5))
         norm = round(norm,1)
 
@@ -158,24 +166,22 @@ class Agent(QTable):
 
         if direction[0] > 0:
             angleD = 360 - angleD
-
-        state = -1
         if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state = 0
+            state += 0
         elif angleD >= 22.5 and angleD < 67.5:
-            state = 1 * 10
+            state += 1 * 10
         elif angleD >= 67.5 and angleD < 112.5:
-            state = 2 * 10
+            state += 2 * 10
         elif angleD >= 112.5 and angleD < 157.5:
-            state = 3 * 10
+            state += 3 * 10
         elif angleD >= 157.5 and angleD < 202.5:
-            state = 4 * 10
+            state += 4 * 10
         elif angleD >= 202.5 and angleD < 247.5:
-            state = 5 * 10
+            state += 5 * 10
         elif angleD >= 247.5 and angleD < 292.5:
-            state = 6 * 10
+            state += 6 * 10
         elif angleD >= 292.5 and angleD < 337.5:
-            state = 7 * 10
+            state += 7 * 10
 
         return state
 
@@ -206,7 +212,7 @@ class Agent(QTable):
         if self.beacon_actual_pos[0] != round(beacon_new_pos[0],1) or self.beacon_actual_pos[1] != round(beacon_new_pos[1],1):
             self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
             # get beacon
-            reward = 5
+            reward = 1
         else:
             reward = 0
 
@@ -224,11 +230,25 @@ class Agent(QTable):
                 mariney += self._MOVE_VAL
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney - self._MOVE_VAL]])
 
+        elif self.possible_actions[action] == self._MOVE_UP_LEFT:
+            if(marinex  - self._MOVE_VAL < 3.5):
+                marinex += self._MOVE_VAL
+            if(mariney - self._MOVE_VAL < 3.5):
+                mariney +=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex-self._MOVE_VAL/2, mariney - self._MOVE_VAL/2]])
+
         elif self.possible_actions[action] == self._MOVE_LEFT:
             if(marinex - self._MOVE_VAL < 3.5):
                 marinex += self._MOVE_VAL
 
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex - self._MOVE_VAL, mariney]])
+
+        elif self.possible_actions[action] == self._MOVE_DOWN_LEFT:
+            if(marinex - self._MOVE_VAL < 3.5):
+                marinex +=self._MOVE_VAL
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex- self._MOVE_VAL/2, mariney + self._MOVE_VAL/2]])
 
         elif self.possible_actions[action] == self._MOVE_DOWN:
             if(mariney + self._MOVE_VAL > 44.5):
@@ -236,10 +256,23 @@ class Agent(QTable):
 
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex, mariney + self._MOVE_VAL]])
 
+        elif self.possible_actions[action] == self._MOVE_DOWN_RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            if(mariney + self._MOVE_VAL > 44.5):
+                mariney -=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex+ self._MOVE_VAL/2, mariney + self._MOVE_VAL/2]])
+
         elif self.possible_actions[action] == self._MOVE_RIGHT:
             if(marinex + self._MOVE_VAL > 60.5):
                 marinex -= self._MOVE_VAL
             func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex + self._MOVE_VAL, mariney]])
+        elif self.possible_actions[action] == self._MOVE_UP_RIGHT:
+            if(marinex + self._MOVE_VAL > 60.5):
+                marinex -= self._MOVE_VAL
+            if(mariney - self._MOVE_VAL < 3.5):
+                mariney +=self._MOVE_VAL
+            func = actions.FunctionCall(self._MOVE_SCREEN, [self._NOT_QUEUED, [marinex+self._MOVE_VAL/2, mariney - self._MOVE_VAL/2]])
 
         return func
 
