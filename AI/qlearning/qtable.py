@@ -72,4 +72,4 @@ class QTable(object):
         print(self.q_table)
 
     def set_epsilon(self, episode):
-        self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 2)))
+        self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 4)))

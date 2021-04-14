@@ -12,7 +12,7 @@ from qtable import QTable
 
 MAP_NAME = 'MoveToBeacon'
 FILE_NAME = 'mtb'
-EPISODES = 500
+EPISODES = 800
 
 '''
     Agent class must have this methods:
