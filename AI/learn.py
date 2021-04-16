@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import QLearning.agents.movetobeacon as class_agent #change path as needed
+import deepQ.agents.defeatzealots_2vs2 as class_agent #change path as needed
 
 # Environment settings
 STEPS = 1_900
@@ -33,7 +33,7 @@ def main():
                         agent_interface_format=AGENT_INTERFACE_FORMAT,
                         step_mul= 1) as env:
 
-        agent = class_agent.Agent(False)
+        agent = class_agent.Agent(True)
 
         random.seed(1)
         np.random.seed(1)

@@ -22,7 +22,7 @@ from dq_network import DQNAgent
 
 MAP_NAME = 'DefeatZealotswithBlink'
 FILE_NAME = 'zealotsModel'
-EPISODES = 1
+EPISODES = 1000
 
 
 '''
@@ -236,7 +236,7 @@ class Agent (DQNAgent):
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
         # check if we made some damage and we have shot with this action
-        if actual_enemy_totalHP < self.enemy_totalHP and action == _ATTACK:
+        if actual_enemy_totalHP < self.enemy_totalHP and action == self._ATTACK:
             reward += 1
         
         if actual_ally_totalHP < self.ally_totalHP:

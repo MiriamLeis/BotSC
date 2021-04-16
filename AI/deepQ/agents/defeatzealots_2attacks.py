@@ -108,11 +108,11 @@ class Agent (DQNAgent):
                             episodes=EPISODES,
                             discount=0.99,
                             rep_mem_size=50_000,        # How many last steps to keep for model training
-                            min_rep_mem_size=150,       # Minimum number of steps in a memory to start learning
-                            learn_every=80,
-                            update_time=50,             # When we'll copy weights from main network to target.
-                            minibatch_size=64,
-                            max_cases=1_000,            # Maximum number of cases until we start to learn
+                            min_rep_mem_size=500,       # Minimum number of steps in a memory to start learning
+                            learn_every=100,
+                            update_time=150,             # When we'll copy weights from main network to target.
+                            minibatch_size=128,
+                            max_cases=1_500,            # Maximum number of cases until we start to learn
                             cases_to_delete=100,        # Cases to delete when we surpassed cases limit.
                             hidden_nodes=100,
                             num_hidden_layers=2,
