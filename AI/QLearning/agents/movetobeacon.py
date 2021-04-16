@@ -12,7 +12,7 @@ from qtable import QTable
 
 MAP_NAME = 'MoveToBeacon'
 FILE_NAME = 'mtb'
-EPISODES = 800
+EPISODES = 1000
 
 '''
     Agent class must have this methods:
@@ -21,10 +21,11 @@ EPISODES = 800
             def preprare(obs)
             def step(env, func)
             def update(obs, deltaTime)
-            def get_num_actions()
-            def get_num_states()
+            def train(step, current_state, action, reward, new_state, done)
             def get_state(obs)
             def get_action(obs)
+            def choose_action(current_state)
+            def get_max_action(current_state)
             def check_action_available(self, obs, action, func)
             def get_reward(obs, action)
             def get_end(obs)
@@ -74,8 +75,8 @@ class Agent(QTable):
                         load=load)
         
         if load:
-            QTable.load_states(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '_states.npy')
-            QTable.load_qtable(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '_qtable.npy')
+            QTable.load_states(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '\\851_states.npy')
+            QTable.load_qtable(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '\\851_qtable.npy')
     
     '''
         Prepare basic parameters.
@@ -108,18 +109,6 @@ class Agent(QTable):
     '''
     def train(self, step, current_state, action, reward, new_state, done):
         QTable.learn(self, state=current_state, action=action, reward=reward, state_=new_state)
-    
-    '''
-        Return agent number of actions
-    '''
-    def get_num_actions(self):
-        return self.num_actions
-    
-    '''
-        Return agent number of states
-    '''
-    def get_num_states(self):
-        return self.num_states
     
     '''
         Return agent state

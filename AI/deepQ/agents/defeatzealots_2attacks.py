@@ -22,7 +22,6 @@ MAP_NAME = 'DefeatZealotswithBlink_2enemies'
 FILE_NAME = 'zealots2enemiesModel'
 EPISODES = 1000
 
-
 '''
     Agent class must have this methods:
 
@@ -30,10 +29,11 @@ EPISODES = 1000
             def preprare(obs)
             def step(env, func)
             def update(obs, deltaTime)
-            def get_num_actions()
-            def get_num_states()
+            def train(step, current_state, action, reward, new_state, done)
             def get_state(obs)
             def get_action(obs)
+            def choose_action(current_state)
+            def get_max_action(current_state)
             def check_action_available(self, obs, action, func)
             def get_reward(obs, action)
             def get_end(obs)
@@ -161,19 +161,7 @@ class Agent (DQNAgent):
     def train(self, step, current_state, action, reward, new_state, done):
         # Every step we update replay memory and train main network
         DQNAgent.update_replay_memory(self, transition=(current_state, action, reward, new_state, done))
-        DQNAgent.train(self, step=step)
-
-    '''
-        Return agent number of actions
-    '''
-    def get_num_actions(self):
-        return self.num_actions
-    
-    '''
-        Return agent number of states
-    '''
-    def get_num_states(self):
-        return self.num_states
+        DQNAgent.learn(self, step=step)
     
     '''
         Return agent state

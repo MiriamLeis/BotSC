@@ -12,19 +12,6 @@ class QTable(object):
         self.states_list = set()
         self.q_table = np.zeros((0, len(self.actions))) # create Q table
     
-    def get_max_action(self, state):
-        idx = list(self.states_list).index(state)
-        q_values = self.q_table[idx]
-        return int(np.argmax(q_values))
-        
-    def choose_action(self, state):
-        self.check_state_exist(state)
-            
-        if np.random.rand() < self.epsilon:
-            return np.random.choice(self.actions)
-        else:
-            return self.get_max_action(state)
-    
     def learn(self, state, action, reward, state_):
         self.check_state_exist(state_)
         self.check_state_exist(state)
@@ -41,11 +28,19 @@ class QTable(object):
         # actualizar la recompensa de ese estado con esa accion dependiendo de lo que hubiese antes
         self.q_table[state_idx, action] = ((1 - self.lr) * q_predict) + (self.lr * (q_target))
         #self.q_table[state_idx, action] += self.lr * (q_target - q_predict)
-
-    def check_state_exist(self, state):
-        if state not in self.states_list:
-            self.q_table = np.vstack([self.q_table, np.zeros((1, len(self.actions)))])
-            self.states_list.add(state)
+    
+    def get_max_action(self, state):
+        idx = list(self.states_list).index(state)
+        q_values = self.q_table[idx]
+        return int(np.argmax(q_values))
+        
+    def choose_action(self, state):
+        self.check_state_exist(state)
+            
+        if np.random.rand() < self.epsilon:
+            return np.random.choice(self.actions)
+        else:
+            return self.get_max_action(state)
         
     def save(self, filepath):
         filepath = os.getcwd() + '\\QLearning\\saves\\' + filepath
@@ -68,8 +63,10 @@ class QTable(object):
         print(type(self.states_list))
         print(self.states_list)
 
-    def print_QTable(self):
-        print(self.q_table)
-
     def set_epsilon(self, episode):
-        self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 4)))
+        self.epsilon = 1 - (episode / (self.total_episodes - (self.total_episodes / 3)))
+
+    def __check_state_exist(self, state):
+        if state not in self.states_list:
+            self.q_table = np.vstack([self.q_table, np.zeros((1, len(self.actions)))])
+            self.states_list.add(state)

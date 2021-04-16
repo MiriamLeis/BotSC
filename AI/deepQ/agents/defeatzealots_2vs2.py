@@ -27,6 +27,7 @@ EPISODES = 1000
             def save(filepath)
             def prepare(obs)
             def update(obs, deltaTime)
+            def train(step, current_state, action, reward, new_state, done)
             def get_num_actions()
             def get_num_states()
             def get_state(obs)
@@ -122,7 +123,7 @@ class Agent:
             self.select_2 = actions.FUNCTIONS.select_point("select",(self.unit_2.x, self.unit_2.y))
     
     '''
-        Train agents (tuple)
+        Train agents
     '''
     def train(self, step, current_state, action, reward, new_state, done):
         if not self.end_1:

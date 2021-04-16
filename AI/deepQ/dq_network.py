@@ -10,8 +10,6 @@ from keras.layers import Dense, Dropout, Activation, Flatten, Input
 from keras.optimizers import Adam
 from collections import deque
 
-MODEL_NAME = 'DEEP_Q'
-
 class DQNAgent:
     def __init__(self, num_actions, num_states, episodes,discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, learn_every = 50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 0, hidden_nodes=25, num_hidden_layers = 1, load = False):
         #parameters
@@ -31,11 +29,11 @@ class DQNAgent:
             # main model
             # model that we are not fitting every step
             # gets trained every step
-            self.model = self.create_model(num_states, hidden_nodes, num_hidden_layers)
+            self.model = self.__create_model(num_states, hidden_nodes, num_hidden_layers)
 
             # target model
             # this is what we .predict against every step
-            self.target_model = self.create_model(num_states, hidden_nodes, num_hidden_layers)
+            self.target_model = self.__create_model(num_states, hidden_nodes, num_hidden_layers)
             self.target_model.set_weights(self.model.get_weights()) # do it again after a while
 
         # deque -> array or list 
@@ -43,22 +41,6 @@ class DQNAgent:
 
         # track internally when we are ready to update target_model
         self.target_update_counter = 0
-
-    def create_model(self, num_states, hidden_nodes = 25, num_hidden_layers = 1):
-        
-        # layers
-        inputs = Input(shape=(num_states,))
-        x = Dense(hidden_nodes, activation='relu')(inputs)
-        for i in range(1, num_hidden_layers):
-            x = Dense(hidden_nodes + (20 * i), activation='relu')(x)
-        outputs = Dense(self.num_actions)(x)
-
-        # creation
-        model = Model(inputs=inputs, outputs=outputs)
-        model.compile(loss="mse", optimizer='adam', metrics=['accuracy'])
-    
-        model.summary()
-        return model
 
     def update_replay_memory(self, transition):
         # transition -> our observation space
@@ -69,7 +51,7 @@ class DQNAgent:
         stateArray = np.array(state)
         return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]
 
-    def train(self, step):
+    def learn(self, step):
 
         if len(self.replay_memory) < self.min_rep_mem_total:
             return
@@ -140,3 +122,19 @@ class DQNAgent:
     def loadModel(self, filepath):
         self.model = keras.models.load_model(filepath)
         self.target_model = keras.models.load_model(filepath)
+
+    def __create_model(self, num_states, hidden_nodes = 25, num_hidden_layers = 1):
+        
+        # layers
+        inputs = Input(shape=(num_states,))
+        x = Dense(hidden_nodes, activation='relu')(inputs)
+        for i in range(1, num_hidden_layers):
+            x = Dense(hidden_nodes + (20 * i), activation='relu')(x)
+        outputs = Dense(self.num_actions)(x)
+
+        # creation
+        model = Model(inputs=inputs, outputs=outputs)
+        model.compile(loss="mse", optimizer='adam', metrics=['accuracy'])
+    
+        model.summary()
+        return model
