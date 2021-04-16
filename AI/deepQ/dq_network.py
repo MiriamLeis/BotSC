@@ -9,6 +9,7 @@ from keras import Model
 from keras.layers import Dense, Dropout, Activation, Flatten, Input
 from keras.optimizers import Adam
 from collections import deque
+from matplotlib import pyplot as plt
 
 class DQNAgent:
     def __init__(self, num_actions, num_states, episodes,discount=0.99, rep_mem_size=50_000, min_rep_mem_size=50, learn_every = 50, update_time=100, minibatch_size=25, max_cases=300, cases_to_delete = 0, hidden_nodes=25, num_hidden_layers = 1, load = False):
@@ -23,6 +24,10 @@ class DQNAgent:
         self.update_time = update_time
         self.max_cases = max_cases
         self.cases_to_delete = cases_to_delete
+
+        self.accuracy = np.empty(0)
+        self.loss = np.empty(0)
+        self.steps = np.empty(0)
 
         if not load:
 
@@ -51,7 +56,7 @@ class DQNAgent:
         stateArray = np.array(state)
         return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]
 
-    def learn(self, step):
+    def learn(self, step, ep = 0):
 
         if len(self.replay_memory) < self.min_rep_mem_total:
             return
@@ -88,8 +93,14 @@ class DQNAgent:
             X.append(current_state)
             y.append(current_qs)
 
-        self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=0, 
+
+
+        history = self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=0, 
             shuffle=False)
+
+        self.accuracy = np.append(self.accuracy, history.history['accuracy'])
+        self.loss = np.append(self.loss, history.history['loss'])
+        self.steps = np.append(self.steps, ep)
 
         #updating to determinate if we want to update target_model yet
         self.target_update_counter += 1
@@ -122,6 +133,21 @@ class DQNAgent:
     def loadModel(self, filepath):
         self.model = keras.models.load_model(filepath)
         self.target_model = keras.models.load_model(filepath)
+
+    def saveGraphics(self):
+        plt.figure()
+        plt.plot(self.steps, self.accuracy, color='royalblue')
+        plt.title('model accuracy')
+        plt.ylabel('accuracy')
+        plt.xlabel('steps')
+        plt.savefig('accuracy.png')
+
+        plt.figure()
+        plt.plot(self.steps, self.loss, color='royalblue')
+        plt.title('model loss')
+        plt.ylabel('loss')
+        plt.xlabel('steps')
+        plt.savefig('loss.png')
 
     def __create_model(self, num_states, hidden_nodes = 25, num_hidden_layers = 1):
         
