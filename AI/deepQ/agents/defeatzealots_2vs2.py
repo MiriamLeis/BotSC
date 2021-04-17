@@ -28,8 +28,6 @@ EPISODES = 1000
             def prepare(obs)
             def update(obs, deltaTime)
             def train(step, current_state, action, reward, new_state, done)
-            def get_num_actions()
-            def get_num_states()
             def get_state(obs)
             def get_action(obs)
             def check_action_available(self, obs, action, func)
@@ -146,18 +144,6 @@ class Agent:
         self.action_1 = self.agent_1.choose_action(current_state[0])
         self.action_2 = self.agent_2.choose_action(current_state[1])
         return (self.action_1, self.action_2)
-
-    '''
-        Return agents number of actions (tuple)
-    '''
-    def get_num_actions(self):
-        return (self.agent_1.get_num_actions(), self.agent_2.get_num_actions())
-    
-    '''
-        Return agents number of states (tuple)
-    '''
-    def get_num_states(self):
-        return (self.agent_1.get_num_states(), self.agent_2.get_num_states())
     
     '''
         Return agents states (tuple)
