@@ -17,7 +17,7 @@ from deepQ.agents.defeatzealots_2attacks import Agent as internal_agent
 
 MAP_NAME = 'DefeatZealotswithBlink_2vs2'
 FILE_NAME = 'zealots2vs2Model'
-EPISODES = 1000
+EPISODES = 2000
 
 
 '''
@@ -39,7 +39,7 @@ EPISODES = 1000
 class Agent:
 
     TYPE_AGENT_1 = units.Protoss.Stalker
-    TYPE_AGENT_2 = units.Terran.Hellion
+    TYPE_AGENT_2 = units.Zerg.Roach
 
     '''
         Initialize the agent
@@ -123,11 +123,11 @@ class Agent:
     '''
         Train agents
     '''
-    def train(self, step, current_state, action, reward, new_state, done):
+    def train(self, step, current_state, action, reward, new_state, done, ep=0):
         if not self.end_1:
-            self.agent_1.train(step, current_state[0], action[0], reward[0], new_state[0], done[0])
+            self.agent_1.train(step, current_state[0], action[0], reward[0], new_state[0], done[0], ep)
         if not self.end_2:
-            self.agent_2.train(step, current_state[1], action[1], reward[1], new_state[1], done[1])
+            self.agent_2.train(step, current_state[1], action[1], reward[1], new_state[1], done[1],ep)
 
     '''
         Return actions with maxium reward (tuple)
