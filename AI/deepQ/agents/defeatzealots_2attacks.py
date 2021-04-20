@@ -90,7 +90,7 @@ class Agent (DQNAgent):
     '''
         Initialize the agent
     '''
-    def __init__(self, load=False, num_states=None, unit_type=units.Protoss.Stalker):
+    def __init__(self, load=False, num_states=None, unit_type=units.Protoss.Stalker, num_episodes=None):
         self.num_actions = len(self.possible_actions)
 
         #if u need to specify this outside agent
@@ -105,7 +105,7 @@ class Agent (DQNAgent):
         DQNAgent.__init__(self, 
                             num_actions=self.num_actions,
                             num_states=self.num_states,
-                            episodes=EPISODES,
+                            episodes=(EPISODES if num_episodes==None else num_episodes),
                             discount=0.99,
                             rep_mem_size=50_000,        # How many last steps to keep for model training
                             min_rep_mem_size=500,       # Minimum number of steps in a memory to start learning

@@ -48,8 +48,8 @@ class Agent:
         self.end_1 = False
         self.end_2 = False
 
-        self.agent_1 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_1)
-        self.agent_2 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_2)
+        self.agent_1 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_1, num_episodes=EPISODES)
+        self.agent_2 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_2, num_episodes=EPISODES)
         
         if load:
             self.agent_1.loadModel(os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '_1.h5')
