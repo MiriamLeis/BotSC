@@ -13,8 +13,8 @@ class QTable(object):
         self.q_table = np.zeros((0, len(self.actions))) # create Q table
     
     def learn(self, state, action, reward, state_):
-        self.check_state_exist(state_)
-        self.check_state_exist(state)
+        self.__check_state_exist(state_)
+        self.__check_state_exist(state)
 
         state_idx = list(self.states_list).index(state)
         next_state_idx = list(self.states_list).index(state_)
