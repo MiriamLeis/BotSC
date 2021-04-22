@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import deepQ.agents.defeatzealots_2vs2 as class_agent #change path as needed
+import deepQ.agents.movetobeacon as class_agent #change path as needed
 
 # Environment settings
 STEPS = 1_900
@@ -57,7 +57,8 @@ def main():
                             action=action, 
                             reward=agent.get_reward(obs[0], action), 
                             new_state=agent.get_state(obs[0]), 
-                            done=agent.check_done(obs[0], STEPS-1))
+                            done=agent.check_done(obs[0], STEPS-1),
+                            epi=episode)
 
             if ep >= episodesForSave:
                 agent.save(class_agent.FILE_NAME + '\\' + str(episode))
@@ -111,7 +112,8 @@ def main():
                                 action=action, 
                                 reward=reward, 
                                 new_state=new_state, 
-                                done=done)
+                                done=done,
+                                epi=episode,)
 
                     current_state = new_state
 
@@ -133,5 +135,6 @@ def main():
             ep += 1
 
         agent.save(class_agent.FILE_NAME)
+        agent.saveGraphics()
 
 main()

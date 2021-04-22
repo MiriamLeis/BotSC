@@ -19,7 +19,7 @@ from dq_network import DQNAgent
 
 MAP_NAME = 'MoveToBeacon'
 FILE_NAME = 'beaconModel'
-EPISODES = 100
+EPISODES = 300
 
 '''
     Agent class must have this methods:
@@ -102,7 +102,7 @@ class Agent (DQNAgent):
                             load=load)
         
         if load:
-            DQNAgent.loadModel(os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '.h5')
+            DQNAgent.loadModel(self, os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '.h5')
 
     '''
         Prepare basic parameters.
@@ -133,10 +133,10 @@ class Agent (DQNAgent):
     '''
         Train agent
     '''
-    def train(self, step, current_state, action, reward, new_state, done):
+    def train(self, step, current_state, action, reward, new_state, done, epi):
         # Every step we update replay memory and train main network
         DQNAgent.update_replay_memory(self, transition=(current_state, action, reward, new_state, done))
-        DQNAgent.learn(self, step=step)
+        DQNAgent.learn(self, step=step,ep=epi)
     
     '''
         Return agent state

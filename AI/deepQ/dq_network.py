@@ -100,7 +100,7 @@ class DQNAgent:
 
         self.accuracy = np.append(self.accuracy, history.history['accuracy'])
         self.loss = np.append(self.loss, history.history['loss'])
-        self.steps = np.append(self.steps, ep)
+        self.steps = np.append(self.steps, step + (ep*1900))
 
         #updating to determinate if we want to update target_model yet
         self.target_update_counter += 1
