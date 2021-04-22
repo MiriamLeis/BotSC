@@ -25,7 +25,7 @@ def main():
     # Create environment
     AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
             feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16),
-            use_feature_units=True)
+            use_feature_units=True)            
 
     with sc2_env.SC2Env(map_name=maps.get(class_agent.MAP_NAME),
                         players=[sc2_env.Agent(sc2_env.Race.terran)],

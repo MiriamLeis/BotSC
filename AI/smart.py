@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import deepQ.agents.defeatzealots as class_agent #change path as needed
+import deepQ.agents.defeatzealots_2vs2 as class_agent #change path as needed
 
 # Environment settings
 EPISODES = 100
@@ -69,12 +69,7 @@ def main():
                 lastTime = realTime
 
                 if actualTime >= timeForAction:
-                    # get new state
-                    new_state = agent.get_state(obs[0])
-
-                    done = agent.check_done(obs[0], STEPS-1)
-
-                    current_state = new_state
+                    current_state = agent.get_state(obs[0])
 
                     agent.update(obs[0], delta)
 

@@ -51,11 +51,6 @@ class DQNAgent:
         # transition -> our observation space
         self.replay_memory.append(transition)
 
-    def get_qs(self, state):
-        # return last layer of neural network
-        stateArray = np.array(state)
-        return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]
-
     def learn(self, step, ep = 0):
 
         if len(self.replay_memory) < self.min_rep_mem_total:
@@ -111,7 +106,7 @@ class DQNAgent:
             self.target_update_counter = 0
   
     def get_max_action(self, state):
-            cases = self.get_qs(state)
+            cases = self.__get_qs(state)
             print("Estado : ", state)
             print("Acciones : ", cases)
             return np.argmax(cases)
@@ -164,3 +159,8 @@ class DQNAgent:
     
         model.summary()
         return model
+    
+    def __get_qs(self, state):
+        # return last layer of neural network
+        stateArray = np.array(state)
+        return self.model.predict(stateArray.reshape(-1, *stateArray.shape))[0]

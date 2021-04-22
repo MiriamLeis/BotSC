@@ -17,7 +17,7 @@ from deepQ.agents.defeatzealots_2attacks import Agent as internal_agent
 
 MAP_NAME = 'DefeatZealotswithBlink_2vs2'
 FILE_NAME = 'zealots2vs2Model'
-EPISODES = 1000
+EPISODES = 2000
 
 
 '''
@@ -28,8 +28,6 @@ EPISODES = 1000
             def prepare(obs)
             def update(obs, deltaTime)
             def train(step, current_state, action, reward, new_state, done)
-            def get_num_actions()
-            def get_num_states()
             def get_state(obs)
             def get_action(obs)
             def check_action_available(self, obs, action, func)
@@ -41,7 +39,7 @@ EPISODES = 1000
 class Agent:
 
     TYPE_AGENT_1 = units.Protoss.Stalker
-    TYPE_AGENT_2 = units.Terran.Hellion
+    TYPE_AGENT_2 = units.Zerg.Roach
 
     '''
         Initialize the agent
@@ -50,8 +48,8 @@ class Agent:
         self.end_1 = False
         self.end_2 = False
 
-        self.agent_1 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_1)
-        self.agent_2 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_2)
+        self.agent_1 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_1, num_episodes=EPISODES)
+        self.agent_2 = internal_agent(num_states=21, unit_type=self.TYPE_AGENT_2, num_episodes=EPISODES)
         
         if load:
             self.agent_1.loadModel(os.getcwd() + '\\deepQ\\models\\' + FILE_NAME + '_1.h5')
@@ -125,11 +123,11 @@ class Agent:
     '''
         Train agents
     '''
-    def train(self, step, current_state, action, reward, new_state, done):
+    def train(self, step, current_state, action, reward, new_state, done, ep=0):
         if not self.end_1:
-            self.agent_1.train(step, current_state[0], action[0], reward[0], new_state[0], done[0])
+            self.agent_1.train(step, current_state[0], action[0], reward[0], new_state[0], done[0], ep)
         if not self.end_2:
-            self.agent_2.train(step, current_state[1], action[1], reward[1], new_state[1], done[1])
+            self.agent_2.train(step, current_state[1], action[1], reward[1], new_state[1], done[1],ep)
 
     '''
         Return actions with maxium reward (tuple)
@@ -146,18 +144,6 @@ class Agent:
         self.action_1 = self.agent_1.choose_action(current_state[0])
         self.action_2 = self.agent_2.choose_action(current_state[1])
         return (self.action_1, self.action_2)
-
-    '''
-        Return agents number of actions (tuple)
-    '''
-    def get_num_actions(self):
-        return (self.agent_1.get_num_actions(), self.agent_2.get_num_actions())
-    
-    '''
-        Return agents number of states (tuple)
-    '''
-    def get_num_states(self):
-        return (self.agent_1.get_num_states(), self.agent_2.get_num_states())
     
     '''
         Return agents states (tuple)

@@ -91,7 +91,7 @@ class Agent (DQNAgent):
     '''
         Initialize the agent
     '''
-    def __init__(self, load=False, num_states=None, unit_type=units.Protoss.Stalker):
+    def __init__(self, load=False, num_states=None):
         self.num_actions = len(self.possible_actions)
 
         #if u need to specify this outside agent
@@ -100,7 +100,7 @@ class Agent (DQNAgent):
         else:
             self.num_states = 13
         
-        self.unit_type = unit_type
+        self.unit_type = units.Protoss.Stalker
 
         # initialize neural network
         DQNAgent.__init__(self, 
