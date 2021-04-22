@@ -75,8 +75,8 @@ class Agent(QTable):
                         load=load)
         
         if load:
-            QTable.load_states(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '\\851_states.npy')
-            QTable.load_qtable(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '\\851_qtable.npy')
+            QTable.load_states(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '_states.npy')
+            QTable.load_qtable(self, filepath=os.getcwd() + '\\QLearning\\saves\\' + FILE_NAME + '_qtable.npy')
     
     '''
         Prepare basic parameters.
