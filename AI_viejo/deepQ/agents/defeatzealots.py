@@ -150,10 +150,10 @@ class Agent (DQNAgent):
     '''
         Train agent
     '''
-    def train(self, step, current_state, action, reward, new_state, done, ep = 0):
+    def train(self, step, current_state, action, reward, new_state, done, epi = 0):
         # Every step we update replay memory and train main network
         DQNAgent.update_replay_memory(self, transition=(current_state, action, reward, new_state, done))
-        DQNAgent.learn(self, step=step, ep)
+        DQNAgent.learn(self, step=step, ep=epi)
     
     '''
         Return agent state

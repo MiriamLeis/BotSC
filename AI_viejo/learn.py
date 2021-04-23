@@ -15,7 +15,7 @@ from absl import flags
 FLAGS = flags.FLAGS
 FLAGS(sys.argv)
 
-import deepQ.agents.movetobeacon as class_agent #change path as needed
+import deepQ.agents.defeatzealots as class_agent #change path as needed
 
 # Environment settings
 STEPS = 1_900
