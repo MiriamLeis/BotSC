@@ -5,6 +5,8 @@ class AbstractAgent:
         return
     def update(self, env, deltaTime):
         return
+    def late_update(self, env, deltaTime):
+        return
     def step(self, env, environment):
         return
     def train(self):

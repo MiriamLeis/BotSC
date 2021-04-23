@@ -38,6 +38,12 @@ class QAgent(AbstractAgent):
         self.new_state = self.agent.get_state(env)
         self.reward = self.agent.get_reward(env, self.action)
         self.agent.update(env, deltaTime)
+        
+    '''
+        Update basic values
+    '''
+    def late_update(self, env, deltaTime):
+        self.current_state = self.new_state
 
     '''
         Do step of the environment
@@ -61,8 +67,6 @@ class QAgent(AbstractAgent):
         q_target = self.reward + (self.gamma * self.q_table[next_state_idx].max())
 
         self.q_table[state_idx, self.action] = ((1 - self.lr) * q_predict) + (self.lr * (q_target))
-
-        self.current_state = self.new_state
 
     '''
         Return action with maxium reward
@@ -101,9 +105,9 @@ class QAgent(AbstractAgent):
     '''
     def load(self, filepath):
         #q-table
-        self.q_table = np.load(filepath + '_qtable.npy')
+        self.q_table = np.load(os.getcwd() + filepath + '_qtable.npy')
         #states
-        tmp_array = np.load(filepath + '_states.npy')
+        tmp_array = np.load(os.getcwd() + filepath + '_states.npy')
         for x in tmp_array:
             self.states_list.add(x)
 
