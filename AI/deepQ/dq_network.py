@@ -135,14 +135,14 @@ class DQNAgent:
         plt.title('model accuracy')
         plt.ylabel('accuracy')
         plt.xlabel('steps')
-        plt.savefig('accuracy.png')
+        plt.savefig('accuracy.svg')
 
         plt.figure()
         plt.plot(self.steps, self.loss, color='royalblue')
         plt.title('model loss')
         plt.ylabel('loss')
         plt.xlabel('steps')
-        plt.savefig('loss.png')
+        plt.savefig('loss.svg')
 
     def __create_model(self, num_states, hidden_nodes = 25, num_hidden_layers = 1):
         
