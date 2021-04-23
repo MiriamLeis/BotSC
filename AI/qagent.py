@@ -90,8 +90,6 @@ class QAgent(AbstractAgent):
         Save Q-Table and States to specify file
     '''
     def save(self, filepath):
-        filepath = os.getcwd() + '\\QLearning\\saves\\' + filepath
-
         #q-table
         np.save(filepath + '_qtable', self.q_table)
         #states
@@ -103,9 +101,9 @@ class QAgent(AbstractAgent):
     '''
     def load(self, filepath):
         #q-table
-        self.q_table = np.load(filepath)
+        self.q_table = np.load(filepath + '_qtable.npy')
         #states
-        tmp_array = np.load(filepath)
+        tmp_array = np.load(filepath + '_states.npy')
         for x in tmp_array:
             self.states_list.add(x)
 
