@@ -8,10 +8,11 @@ class QAgent(AbstractAgent):
         super().__init__()
         self.agent = agent
 
-        self.actions = self.agent.get_possible_actions()
-        self.lr = 0.2
-        self.epsilon = 0.1
-        self.gamma = 0.95
+        info = self.agent.get_info()
+
+        self.actions = info[1]
+        self.lr = info[2]
+        self.gamma = info[3]
         self.total_episodes = total_episodes
 
         self.states_list = set()

@@ -7,12 +7,15 @@ def learn(env, agent, filepath, saves_filepath, episodes, episodes_for_save, ste
         agent.load(filepath)
     
     end = False
+    ep = 0
     # environment loop
     for episode in tqdm(range(1,episodes+1), ascii=True, unit="episode"):
         obs = env.reset()
 
-        if (episode % episodes_for_save) == 0:
-            agent.save(saves_filepath)
+        if ep == episodes_for_save:
+            agent.save(saves_filepath + str(episode))
+            ep = 0
+        ep += 1
 
         agent.prepare(env=obs[0],ep=episode-1)
 
