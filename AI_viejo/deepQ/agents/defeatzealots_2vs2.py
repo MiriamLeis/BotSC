@@ -59,6 +59,10 @@ class Agent:
         self.agent_1.save(filepath + '_1')
         self.agent_2.save(filepath + '_2')
 
+    def saveGraphics(self):
+        self.agent_1.saveGraphics("1_")
+        self.agent_2.saveGraphics("2_")
+
     '''
         Prepare basic parameters. This is called before start the episode.
     '''
