@@ -17,7 +17,7 @@ from dq_network import DQNAgent
 '''
 # environment values
 
-MAP_NAME = 'MoveToBeacon'
+MAP_NAME = 'BuildMarines'
 FILE_NAME = 'beaconModel'
 EPISODES = 300
 
@@ -95,10 +95,10 @@ class Agent (DQNAgent):
                             rep_mem_size=50_000,        # How many last steps to keep for model training
                             min_rep_mem_size=256,       # Minimum number of steps in a memory to start learning
                             update_time=5,             # When we'll copy weights from main network to target.
-                            minibatch_size=64,
-                            learn_every=128,
-                            max_cases=1024,
-                            cases_to_delete=64,            # Maximum number of cases until we start to learn
+                            minibatch_size=256,
+                            learn_every=256,
+                            max_cases=256,
+                            cases_to_delete=256,            # Maximum number of cases until we start to learn
                             load=load)
         
         if load:
@@ -115,13 +115,13 @@ class Agent (DQNAgent):
         self.beacon_actual_pos = [beacon_new_pos[0], beacon_new_pos[1]]
         self.oldDist = self.__get_dist(obs)
 
-        return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
+        return actions.FunctionCall(self._NO_OP, []), 0
     
     '''
         Do step of the environment
     '''
     def step(self, env, func):
-        obs = env.step(actions=[func])
+        obs = env.step(actions=[actions.FunctionCall(self._NO_OP, [])])
         return obs, self.get_end(obs[0])
 
     '''

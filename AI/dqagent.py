@@ -18,7 +18,7 @@ class DQAgent(AbstractAgent):
         
         info = self.agent.get_info()
 
-        self.num_actions = info[1]
+        self.actions = info[1]
         self.discount = info[3]
         self.rep_mem_size = info[4]
         self.min_rep_mem_size = info[5]
@@ -76,6 +76,7 @@ class DQAgent(AbstractAgent):
         return self.agent.step(env=env,environment=environment)
 
     def train(self):
+        return
         self.__update_replay_memory(self, transition=(self.current_state, self.action, self.reward, self.new_state))
 
         if len(self.replay_memory) < self.min_rep_mem_total:
@@ -165,7 +166,7 @@ class DQAgent(AbstractAgent):
         x = Dense(hidden_nodes, activation='relu')(inputs)
         for i in range(1, num_hidden_layers):
             x = Dense(hidden_nodes + (20 * i), activation='relu')(x)
-        outputs = Dense(self.num_actions)(x)
+        outputs = Dense(len(self.actions))(x)
 
         # creation
         model = Model(inputs=inputs, outputs=outputs)

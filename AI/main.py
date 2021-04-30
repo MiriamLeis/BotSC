@@ -4,19 +4,18 @@ import os
 from tqdm import tqdm
 
 from pysc2_env import PySC2 as Environment # environment
-from movetobeacon import MoveToBeacon as EnvAgent # environment agent
-from qagent import QAgent as Agent # algorithm agent
+from buildmarines import BuildMarines as EnvAgent # environment agent
+from dqagent import DQAgent as Agent # algorithm agent
 
 from learn import learn
 from smart import smart
-
 from absl import flags
 FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('episodes', 1000, 'Number of episodes.', lower_bound=0)
-flags.DEFINE_integer('steps', 1900, 'Steps from each episode.', lower_bound=0)
+flags.DEFINE_integer('steps', 14250, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 50, 'Episodes until backup save.', lower_bound=0)
-flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lower_bound=0.0)
+flags.DEFINE_float('time_for_action', 2, 'Time until choose new action.', lower_bound=0.0)
 flags.DEFINE_boolean('learn', True, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information.')
 flags.DEFINE_string('filepath', 'saves\\', 'Filepath where is file for load or save.')

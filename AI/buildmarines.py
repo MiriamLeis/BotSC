@@ -1,0 +1,339 @@
+import numpy as np
+import math
+import random 
+from pysc2.lib import actions
+from pysc2.lib import features
+from pysc2.lib import units
+
+from abstract_base import AbstractBase
+
+class BuildMarines(AbstractBase): 
+    _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
+    _PLAYER_SELF = 1
+    _PLAYER_NEUTRAL = 3
+
+    _NO_OP = actions.FUNCTIONS.no_op.id
+    _MOVE_SCREEN = actions.FUNCTIONS.Attack_screen.id
+    _SELECT_ARMY = actions.FUNCTIONS.select_army.id
+    _SELECT_POINT = actions.FUNCTIONS.select_point.id
+    _SELECT_IDLE_WORKER = actions.FUNCTIONS.select_idle_worker.id
+    _HARVEST_GATHER_SCREEN = actions.FUNCTIONS.Harvest_Gather_screen.id
+    _TRAIN_MARINE = actions.FUNCTIONS.Train_Marine_quick.id
+    _TRAIN_WORKER = actions.FUNCTIONS.Train_SCV_quick.id
+    _RALLY_WORKERS_SCREEN = actions.FUNCTIONS.Rally_Workers_screen.id
+    _RALLY_UNITS_SCREEN = actions.FUNCTIONS.Rally_Units_screen.id 
+
+    _BUILD_BARRACKS = actions.FUNCTIONS.Build_Barracks_screen.id
+    _BUILD_SUPPLYDEPOT = actions.FUNCTIONS.Build_SupplyDepot_screen.id
+
+    _TERRAN_COMMANDCENTER = units.Terran.CommandCenter
+    _TERRAN_SCV = units.Terran.SCV
+    _TERRAN_MARINE = units.Terran.Marine
+    _TERRAN_BARRACKS = units.Terran.Barracks
+    _TERRAN_SUPLY_DEPOT = units.Terran.SupplyDepot
+    _MINERAL_FIELD = units.Neutral.MineralField
+
+    _IDLE_WORKER_HARVEST = 0
+    _IDLE_WORKER_BUILD_HOUSE = 1
+    _IDLE_WORKER_BUILD_BARRACKS = 2
+    _CREATE_WORKER = 3
+    _CREATE_MARINES = 4
+    _DO_NOTHING = 5
+
+    _SELECT_ALL = [0]
+    _NOT_QUEUED = [0]
+    _QUEUED = [1]
+
+    _MOVE_VAL = 3.5
+
+    possible_actions = [
+        _IDLE_WORKER_HARVEST,
+        _IDLE_WORKER_BUILD_HOUSE,
+        _IDLE_WORKER_BUILD_BARRACKS,
+        _CREATE_WORKER,
+        _CREATE_MARINES,
+        _DO_NOTHING
+    ]
+
+    def __init__(self):
+        super().__init__()
+    
+    '''
+        Return basic information.
+    '''
+    def get_info(self):
+        return ['BuildMarines', 
+                self.possible_actions,
+                8, 
+                0.99, 
+                50_000, 
+                256, 
+                64, 
+                5, 
+                1024, 
+                64,
+                100,
+                2]
+
+    '''
+        Prepare basic parameters.
+    '''
+    def prepare(self, env):
+        self.workersHarvesting = 12
+        self.maxHouses = 20
+        self.maxBarracks = 8
+        self.action = actions.FunctionCall(self._NO_OP, [])
+        self.actualMarines = 0
+
+        return 0
+
+    '''
+        Update basic values and train
+    '''
+    def update(self, env, deltaTime):
+        self.oldDist = self.__get_dist(env)
+
+    '''
+        Do step of the environment
+    '''
+    def step(self, env, environment):
+        for func in self.action:
+            finalAct = self.__check_action_available(env=env, action=func)
+            obs = environment.step(actions=[finalAct])
+            env = obs[0]
+
+        self.action = [actions.FunctionCall(self._NO_OP, [])]
+        return obs
+
+    '''
+        Return agent state
+    '''
+    def get_state(self, env):
+
+
+        state = [0, 0, 0, 0, 0,0, 0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0]
+
+
+        if len(self.__get_group(env, self._TERRAN_SCV)) - 12 > 0:
+            state[0] = env.observation.player.idle_worker_count / (len(self.__get_group(env, self._TERRAN_SCV)) - 12)
+        else:
+            state[0] = 0
+
+
+        percentageHarvesting = self.workersHarvesting / 16
+        state[1] = percentageHarvesting
+
+        percentageFood = env.observation.player.food_used / env.observation.player.food_cap
+        state[2] = percentageFood
+
+        percentageMinerals = env.observation.player.minerals / 2000
+        if percentageMinerals > 1:
+            state[3] = 1
+        else:
+            state[3] = percentageMinerals
+
+        state[4] = self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) / self.maxHouses
+        state[5] = self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) / self.maxBarracks
+
+        if self.__get_group(env, self._TERRAN_COMMANDCENTER)[0].order_progress_0 > 0:
+            state[6] = 1
+        else:
+            state[6] = 0
+        
+
+        for i in range(7, 7 + self.__get_barracks_used(env)):
+            state[i] = 1
+        for i in range(15, 15 + self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT)):
+            state[i] = 1
+        for i in range(22, 22 + self.__get_buildings_building(env, self._TERRAN_BARRACKS)):
+            state[i] = 1
+            
+        print(state)
+        return 0
+
+
+
+    '''
+        Return action of environment
+    '''
+    def get_action(self, env, action):
+        marinex, mariney = self.__get_unit_pos(env=env, view=self._PLAYER_SELF)
+        func = [actions.FunctionCall(self._NO_OP, [])]
+        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+
+        if  self.possible_actions[action] == self._IDLE_WORKER_HARVEST:
+            minerals = self.__get_group(env, self._MINERAL_FIELD)
+            mineral = minerals[random.randint(0, len(minerals)-1)]
+            
+            func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]),actions.FunctionCall(self._HARVEST_GATHER_SCREEN, [self._NOT_QUEUED, [mineral.x,mineral.y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+
+        elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_HOUSE:
+            x = 0
+            y = 0
+            if (len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) < 11):
+                x = 3.5 + (len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) * 6)
+                y = 43.5
+            else:
+                x = 15.5 + ((len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT))-11) * 6)
+                y = 37.5
+            func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(self._BUILD_SUPPLYDEPOT, [self._NOT_QUEUED, [x,y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+
+            if len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) >= self.maxHouses:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+
+        elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_BARRACKS:
+            func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(self._BUILD_BARRACKS, [self._NOT_QUEUED, [60.5 - (len(self.__get_group(env, self._TERRAN_BARRACKS)) * 8), 5]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+            if len(self.__get_group(env, self._TERRAN_BARRACKS)) >= self.maxBarracks:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+
+        elif self.possible_actions[action] == self._CREATE_WORKER:
+            if self.__get_group(env, self._TERRAN_COMMANDCENTER)[0].order_progress_0 > 0:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+            else:
+                func = [actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]]), actions.FunctionCall(self._RALLY_WORKERS_SCREEN, [self._NOT_QUEUED, [commandCenter[0].x,commandCenter[0].y]]),actions.FunctionCall(self._TRAIN_WORKER, [self._NOT_QUEUED]),actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+        elif self.possible_actions[action] == self._CREATE_MARINES:
+            if self.__get_percentage_of_barracks_used(env) == 1 or self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) / self.maxBarracks == 0:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+            else:
+                barrack = self.__get_unused_barrack(env)
+                func = [actions.FunctionCall(self._SELECT_POINT, [[0], [barrack[0],barrack[1]]]), actions.FunctionCall(self._TRAIN_MARINE, [self._NOT_QUEUED]),actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+        elif self.possible_actions[action] == self._DO_NOTHING:
+            func = [actions.FunctionCall(self._NO_OP, [])]
+        
+        self.action = func
+    
+    '''
+        Return reward
+    '''
+    def get_reward(self, env, action):
+
+        if len(self.__get_group(env, self._TERRAN_MARINE) > self.actualMarines):
+            self.actualMarines = len(self.__get_group(env, self._TERRAN_MARINE)
+            reward = 1
+        else:
+            reward = 0
+
+
+        return reward
+
+    '''
+        Return True if we must end this episode
+    '''
+    def get_end(self, env):
+        return False
+
+    '''
+        (Private method)
+        Check if current action is available. If not, use default action
+    '''
+    def __check_action_available(self, env, action):
+
+        if not (action[0] in env.observation.available_actions):
+            return [actions.FunctionCall(self._NO_OP, [])]
+        else:
+            return action
+
+            
+
+    '''
+        (Private method)
+        Return unit position
+    '''
+    def __get_unit_pos(self, env, view):
+        ai_view = env.observation['feature_screen'][self._PLAYER_RELATIVE]
+        unitys, unitxs = (ai_view == view).nonzero()
+        if len(unitxs) == 0:
+            unitxs = np.array([0])
+        if len(unitys) == 0:
+            unitys = np.array([0])
+        return unitxs.mean(), unitys.mean()
+
+    '''
+        (Private method)
+        Return angle formed from two lines
+    '''
+    def __ang(self, lineA, lineB):
+        # Get nicer vector form
+        vA = lineA
+        vB = lineB
+        # Get dot prod
+        dot_prod = np.dot(vA, vB)
+        # Get magnitudes
+        magA = np.dot(vA, vA)**0.5
+        magB = np.dot(vB, vB)**0.5
+        # Get cosine value
+        cos = dot_prod/magA/magB
+        # Get angle in radians and then convert to degrees
+        angle = math.acos(dot_prod/magB/magA)
+        # Basically doing angle <- angle mod 360
+        ang_deg = math.degrees(angle)%360
+
+
+        return ang_deg
+
+    '''
+        (Private method)
+        Return dist from marine and beacon position
+    '''
+    def __get_dist(self, env):
+        marinex, mariney = self.__get_unit_pos(env, self._PLAYER_SELF)
+        beaconx, beacony = self.__get_unit_pos(env, self._PLAYER_NEUTRAL)
+
+        newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
+        return newDist
+
+    '''
+        (Private method)
+        Return specified group
+    '''
+    def __get_group(self, obs, group_type):
+        group = [unit for unit in obs.observation['feature_units'] 
+                    if unit.unit_type == group_type]
+        return group
+
+    def __get_barracks_used(self, obs):
+        barracks = self.__get_group(obs, self._TERRAN_BARRACKS)
+        used = 0
+        for i in range(0, len(barracks)):
+            if barracks[i].order_progress_0 > 0:
+                used += 1
+        return used
+
+    def __get_percentage_of_barracks_used(self, obs):
+        barracks = self.__get_group(obs, self._TERRAN_BARRACKS)
+        used = 0
+        built = 0
+        for i in range(0, len(barracks)):
+            if barracks[i].order_progress_0 > 0:
+                used += 1
+            if barracks[i].build_progress < 100:
+                built += 1
+        if built == 0:
+            return 0
+        else:
+            return used / built
+
+    def __get_buildings_building(self, obs, buildingType):
+        barracks = self.__get_group(obs, buildingType)
+        built = 0
+        for i in range(0, len(barracks)):
+            if barracks[i].build_progress < 100:
+                built += 1
+        return built
+            
+
+    def __get_unused_barrack(self, obs):
+        barracks = self.__get_group(obs, self._TERRAN_BARRACKS)
+        for i in range(0, len(barracks)):
+            if barracks[i].order_progress_0 == 0 and barracks[i].build_progress == 100:
+                return [barracks[i].x, barracks[i].y]
+        return [-1,-1]
+
+
+    def __get_number_of_built_building(self, obs, group_type):
+        buildings = self.__get_group(obs, group_type)
+        built = 0
+        for i in range(0, len(buildings)):
+            if buildings[i].build_progress == 100:
+                built += 1
+        return built
