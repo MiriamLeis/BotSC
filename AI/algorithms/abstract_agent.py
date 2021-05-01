@@ -15,6 +15,8 @@ class AbstractAgent:
         return
     def choose_action(self, env):
         return
+    def get_agent(self):
+        return
     def save(self, filepath):
         return
     def load(self, filepath):

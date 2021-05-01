@@ -142,7 +142,13 @@ class DQAgent(AbstractAgent):
             self.agent.get_action(env=env, action=self.action)
         else:
             self.get_max_action(env=env)
-
+    
+    '''
+        Return internal agent
+    '''
+    def get_agent(self):
+        return self.agent
+        
     '''
         Save models to specify file
     '''              

@@ -23,9 +23,11 @@ class PySC2(Environment):
 
     def reset(self):
         super().reset()
-        return self.env.reset()
+        obs = self.env.reset()
+        return obs[0]
 
     def step(self, actions):
         super().step()
-        return self.env.step(actions=actions)
+        obs = self.env.step(actions=actions)
+        return obs[0]
 

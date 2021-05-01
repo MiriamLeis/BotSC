@@ -55,8 +55,17 @@ class DQMultipleAgent(AbstractAgent):
         Return PySC2 environment obs
     '''
     def step(self, env, environment):
+        not_end = True
+        
         for net in self.networks:
-            net.step(env=env, environment=environment)
+            env, _ = net.step(env=env, environment=environment)
+
+        for net in self.networks:
+            this_end = net.get_agent().get_end(env)
+            if not this_end and not_end: 
+                not_end = False
+        
+        return env, not_end
 
     def train(self):
         for net in self.networks:
@@ -76,7 +85,16 @@ class DQMultipleAgent(AbstractAgent):
     def choose_action(self, env):
         for net in self.networks:
             net.choose_action(env=env)
-
+    
+    '''
+        Return internal agent
+    '''
+    def get_agent(self):
+        agents = []
+        for net in self.networks:
+            agents.append(net.get_agents())
+        return agents
+        
     '''
         Save models to specify file
     '''              
@@ -92,5 +110,5 @@ class DQMultipleAgent(AbstractAgent):
     def load(self, filepath):
         cont = 1
         for net in self.networks:
-            net.load(filepath=filepath + '_' + cont)
+            net.load(filepath=filepath + '_' + str(cont))
             cont += 1

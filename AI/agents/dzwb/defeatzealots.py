@@ -94,8 +94,8 @@ class DefeatZealots(AbstractBase):
     '''
     def step(self, env, environment):
         self._check_action_available(env=env)
-        obs = environment.step(actions=[self.action])
-        return obs, self.get_end(env=env)
+        env = environment.step(actions=[self.action])
+        return env, self.get_end(env=env)
 
     '''
         Return action of environment
@@ -224,8 +224,8 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return specified group
     '''
-    def _get_group(self, obs, group_type):
-        group = [unit for unit in obs.observation['feature_units'] 
+    def _get_group(self, env, group_type):
+        group = [unit for unit in env.observation['feature_units'] 
                     if unit.unit_type == group_type]
         return group
 
@@ -233,8 +233,8 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return zealot with lowest healt (health + shield)
     '''
-    def _get_zealot(self, obs):
-        zealots = self._get_group(obs, self.UNIT_ENEMY)
+    def _get_zealot(self, env):
+        zealots = self._get_group(env, self.UNIT_ENEMY)
 
         # search who has lower hp and lower shield
         target = zealots[0]
@@ -249,8 +249,8 @@ class DefeatZealots(AbstractBase):
         Return totalHP of a group = (unit health plus unit shield)
     '''
 
-    def _get_group_totalHP(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _get_group_totalHP(self, env, group_type):
+        group = self._get_group(env, group_type)
         totalHP = 0
         for unit in group:
             totalHP += unit.health + unit.shield
@@ -261,8 +261,8 @@ class DefeatZealots(AbstractBase):
         Return totalHP of a group = (unit health plus unit shield)
     '''
 
-    def _get_group_onlyHP(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _get_group_onlyHP(self, env, group_type):
+        group = self._get_group(env, group_type)
         totalHP = 0
         for unit in group:
             totalHP += unit.health
@@ -295,8 +295,8 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return mean position of a group
     '''
-    def _get_meangroup_position(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _get_meangroup_position(self, env, group_type):
+        group = self._get_group(env, group_type)
 
         unitx = unity = 0
         for unit in group:
@@ -316,8 +316,8 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return True if group cooldown == 0
     '''
-    def _can_shoot(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _can_shoot(self, env, group_type):
+        group = self._get_group(env, group_type)
 
         for unit in group:
             if unit.weapon_cooldown != 0:

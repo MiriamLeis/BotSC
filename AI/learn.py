@@ -2,7 +2,7 @@ import sys
 
 from tqdm import tqdm
 
-def learn(env, agent, filepath, saves_filepath, episodes, episodes_for_save, steps, time_for_action, load):
+def learn(environment, agent, filepath, saves_filepath, episodes, episodes_for_save, steps, time_for_action, load):
     if load:
         agent.load(filepath)
     
@@ -10,7 +10,7 @@ def learn(env, agent, filepath, saves_filepath, episodes, episodes_for_save, ste
     ep = 0
     # environment loop
     for episode in tqdm(range(1,episodes+1), ascii=True, unit="episode"):
-        obs = env.reset()
+        env = environment.reset()
 
         # learn reward for last action
         if end:
@@ -22,27 +22,27 @@ def learn(env, agent, filepath, saves_filepath, episodes, episodes_for_save, ste
             ep = 0
         ep += 1
 
-        agent.prepare(env=obs[0],ep=episode-1)
+        agent.prepare(env=env,ep=episode-1)
 
         actualTime = sys.maxsize
         lastTime = 0.0
 
         for step in range(steps):
             # get deltaTime
-            realTime = ((obs[0]).observation["game_loop"] / 16)
+            realTime = ((env).observation["game_loop"] / 16)
             deltaTime = realTime - lastTime
             lastTime = realTime
 
             if actualTime >= time_for_action:
-                agent.update(env=obs[0], deltaTime=deltaTime)
+                agent.update(env=env, deltaTime=deltaTime)
                 agent.train()
-                agent.late_update(env=obs[0], deltaTime=deltaTime)
-                agent.choose_action(env=obs[0])
+                agent.late_update(env=env, deltaTime=deltaTime)
+                agent.choose_action(env=env)
                 actualTime = 0.0
             else:
                 actualTime += deltaTime
             
-            obs, end = agent.step(env=obs[0],environment=env.get_environment())
+            env, end = agent.step(env=env,environment=environment)
 
             if end:
                 break

@@ -54,9 +54,10 @@ class InternalAgent(AbstractBase):
     UNIT_ALLY = units.Protoss.Stalker
     UNIT_ENEMY = units.Protoss.Zealot
 
-    def __init__(self, unit_type=units.Protoss.Stalker):
+    def __init__(self, unit_type=units.Protoss.Stalker, allies_type=[]):
         super().__init__()
         self.UNIT_ALLY = unit_type
+        self.allies_type = allies_type
 
     '''
         Return map information.
@@ -95,6 +96,9 @@ class InternalAgent(AbstractBase):
         super().update(env=env, deltaTime=deltaTime)
 
         self.last_can_shoot = self.current_can_shoot
+
+        unit = self._get_group(env=env, group_type=self.UNIT_ALLY)[0]
+        self.select = actions.FUNCTIONS.select_point("select",(unit.x, unit.y))
         
     '''
         Do step of the environment
@@ -102,14 +106,15 @@ class InternalAgent(AbstractBase):
     def step(self, env, environment):
         if self.end: return env, self.get_end(env)
         
-        obs = environment.step(actions=[self.select_1])
-        self.get_end(obs[0])
+        env = environment.step(actions=[self.select])
+        self.get_end(env)
 
-        if self.end: return obs, self.get_end(obs[0])
+        if self.end: return env, self.get_end(env)
         
-        obs = environment.step(actions=[self.action])
+        self._check_action_available(env=env)
+        env = environment.step(actions=[self.action])
 
-        return obs, self.get_end(obs[0])
+        return env, self.get_end(env)
 
     '''
         Return action of environment
@@ -122,15 +127,15 @@ class InternalAgent(AbstractBase):
         if self.possible_actions[action] == self._ATTACK_CLOSEST:
             # ATTACK ACTION
             if self._ATTACK_SCREEN in env.observation.available_actions:
-                stalkerx, stalkery = self._get_meangroup_position(env, self.unit_type)
-                zealot = self.__get_zealot_closest(env, [stalkerx,stalkery])
+                stalkerx, stalkery = self._get_meangroup_position(env, self.UNIT_ALLY)
+                zealot = self._get_zealot_closest(env, [stalkerx,stalkery])
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         elif self.possible_actions[action] == self._ATTACK_LOWEST:
             # ATTACK ACTION
             if self._ATTACK_SCREEN in env.observation.available_actions:
-                stalkerx, stalkery = self._get_meangroup_position(env, self.unit_type)
-                zealot = self.__get_zealot_lowest(env, [stalkerx,stalkery])
+                stalkerx, stalkery = self._get_meangroup_position(env, self.UNIT_ALLY)
+                zealot = self._get_zealot_lowest(env, [stalkerx,stalkery])
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         else:
@@ -211,7 +216,7 @@ class InternalAgent(AbstractBase):
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
         # check if we made some damage and we have shot with this action
-        if actual_enemy_totalHP < self.enemy_totalHP and action == self._ATTACK:
+        if actual_enemy_totalHP < self.enemy_totalHP and (action == self._ATTACK_CLOSEST or action == self._ATTACK_LOWEST) and self.last_can_shoot:
             reward += 1
         
         if actual_ally_totalHP < self.ally_totalHP:
@@ -223,7 +228,7 @@ class InternalAgent(AbstractBase):
         self.enemy_onlyHP = actual_enemy_onlyHP
         self.ally_totalHP = actual_ally_totalHP
 
-        zealots = self.__get_group(env, units.Protoss.Zealot)
+        zealots = self._get_group(env, self.UNIT_ENEMY)
 
         if self.current_enemies != len(zealots):
             reward += 2
@@ -235,15 +240,15 @@ class InternalAgent(AbstractBase):
         Return True if we must end this episode
     '''
     def get_end(self, env):
-        stalkers = self._get_group(env, self.UNIT_ALLY)
-        self.end = not stalkers
+        ally = self._get_group(env, self.UNIT_ALLY)
+        self.end = not ally
 
     '''
         (Protected method)
         Return if current action is available in the environment
     '''
     def _check_action_available(self, env):
-        if self.possible_actions[self.num_action] == self._ATTACK:
+        if self.possible_actions[self.num_action] == self._ATTACK_CLOSEST or self._ATTACK_LOWEST:
             # ATTACK ACTION
             if not (self._ATTACK_SCREEN in env.observation.available_actions):
                 self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
@@ -253,10 +258,17 @@ class InternalAgent(AbstractBase):
 
     '''
         (Protected method)
+        Return array of allies type
+    '''
+    def _get_allies_type(self):
+        return self.allies_type
+
+    '''
+        (Protected method)
         Return specified group
     '''
-    def _get_group(self, obs, group_type):
-        group = [unit for unit in obs.observation['feature_units'] 
+    def _get_group(self, env, group_type):
+        group = [unit for unit in env.observation['feature_units'] 
                     if unit.unit_type == group_type]
         return group
 
@@ -264,12 +276,12 @@ class InternalAgent(AbstractBase):
         (Protected method)
         Return zealot with lowest healt (health + shield)
     '''
-    def _get_zealot_closest(self, obs, stalker):
-        zealots = self._get_group(obs, units.Protoss.Zealot)
+    def _get_zealot_closest(self, env, stalker):
+        zealots = self._get_group(env, self.UNIT_ENEMY)
         # search who has lower hp and lower shield
         target = zealots[0]
         for i in range(1, len(zealots)):
-            if self.__get_dist([stalker[0], stalker[1]], [zealots[i].x, zealots[i].y]) < self.__get_dist([stalker[0], stalker[1]], [target.x, target.y]) :
+            if self._get_dist([stalker[0], stalker[1]], [zealots[i].x, zealots[i].y]) < self._get_dist([stalker[0], stalker[1]], [target.x, target.y]) :
                 target = zealots[i]
                 
         return target
@@ -278,8 +290,8 @@ class InternalAgent(AbstractBase):
         (Protected method)
         Return zealot with lowest healt (health + shield)
     '''
-    def _get_zealot_lowest(self, obs, stalker):
-        zealots = self._get_group(obs, units.Protoss.Zealot)
+    def _get_zealot_lowest(self, env, stalker):
+        zealots = self._get_group(env, self.UNIT_ENEMY)
         # search who has lower hp and lower shield
         target = zealots[0]
         for i in range(1, len(zealots)):
@@ -292,8 +304,8 @@ class InternalAgent(AbstractBase):
         (Protected method)
         Return totalHP of a group = (unit health plus unit shield)
     '''
-    def _get_group_totalHP(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _get_group_totalHP(self, env, group_type):
+        group = self._get_group(env, group_type)
         totalHP = 0
         for unit in group:
             totalHP += unit.health + unit.shield
@@ -304,8 +316,8 @@ class InternalAgent(AbstractBase):
         Return totalHP of a group = (unit health plus unit shield)
     '''
 
-    def _get_group_onlyHP(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _get_group_onlyHP(self, env, group_type):
+        group = self._get_group(env, group_type)
         totalHP = 0
         for unit in group:
             totalHP += unit.health
@@ -338,8 +350,8 @@ class InternalAgent(AbstractBase):
         (Protected method)
         Return mean position of a group
     '''
-    def _get_meangroup_position(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _get_meangroup_position(self, env, group_type):
+        group = self._get_group(env, group_type)
 
         unitx = unity = 0
         for unit in group:
@@ -359,8 +371,8 @@ class InternalAgent(AbstractBase):
         (Protected method)
         Return True if group cooldown == 0
     '''
-    def _can_shoot(self, obs, group_type):
-        group = self._get_group(obs, group_type)
+    def _can_shoot(self, env, group_type):
+        group = self._get_group(env, group_type)
 
         for unit in group:
             if unit.weapon_cooldown != 0:

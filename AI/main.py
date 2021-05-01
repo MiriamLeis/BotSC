@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 from environment.pysc2_env import PySC2 as Environment # environment
-from agents.dzwb2v1.defeatzealots2v1_dq import DQDefeatZealots2v1 as EnvAgent # environment agent
+from agents.mtb.movetobeacon_dq import DQMoveToBeacon as EnvAgent # environment agent
 from algorithms.dqagent import DQAgent as Agent # algorithm agent
 
 from learn import learn
@@ -17,10 +17,10 @@ flags.DEFINE_integer('episodes', 1000, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 1900, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 50, 'Episodes until backup save.', lower_bound=0)
 flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lower_bound=0.0)
-flags.DEFINE_boolean('learn', False, 'Agent will learn.')
+flags.DEFINE_boolean('learn', True, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
-flags.DEFINE_string('filename', 'dzwb1v2', 'Filename for load or save.')
+flags.DEFINE_string('filename', 'mtb', 'Filename for load or save.')
 
 FLAGS(sys.argv)
 
@@ -39,7 +39,7 @@ def main():
     env = Environment(args=agent.get_args())
 
     if FLAGS.learn:
-        learn(env=env, 
+        learn(environment=env, 
             agent=agent, 
             filepath=FLAGS.filepath + FLAGS.filename, 
             saves_filepath=FILEPATH_SAVES, 
@@ -49,7 +49,7 @@ def main():
             time_for_action=FLAGS.time_for_action, 
             load=FLAGS.load)
     else:
-        smart(env=env, 
+        smart(environment=env, 
             agent=agent, 
             filepath=FLAGS.filepath + FLAGS.filename, 
             episodes=FLAGS.episodes, 
