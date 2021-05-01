@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 from environment.pysc2_env import PySC2 as Environment # environment
-from agents.dzwb.defeatzealots_dq import DQDefeatZealots as EnvAgent # environment agent
+from agents.dzwb2v1.defeatzealots2v1_dq import DQDefeatZealots2v1 as EnvAgent # environment agent
 from algorithms.dqagent import DQAgent as Agent # algorithm agent
 
 from learn import learn
@@ -20,7 +20,7 @@ flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lowe
 flags.DEFINE_boolean('learn', False, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
-flags.DEFINE_string('filename', 'mtb', 'Filename for load or save.')
+flags.DEFINE_string('filename', 'dzwb1v2', 'Filename for load or save.')
 
 FLAGS(sys.argv)
 
