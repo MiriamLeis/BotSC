@@ -3,7 +3,7 @@ import math
 
 from agents.dzwb2v1.defeatzealots2v1 import DefeatZealots2v1
 
-class DQDefeatZealots2v1(DefeatZealots2v1): 
+class DQInternalAgent(AbstractBase): 
     def __init__(self):
         super().__init__()
 
@@ -12,13 +12,13 @@ class DQDefeatZealots2v1(DefeatZealots2v1):
     '''
     def get_info(self):
         return {'actions' : self.possible_actions, 
-             'num_states' : 13,
+             'num_states' : 21,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,
-             'min_replay_mem_size' : 150,
-             'minibatch_size' : 64,
-             'update_time' : 50,
-             'max_cases' : 1_000,
+             'min_replay_mem_size' : 500,
+             'minibatch_size' : 128,
+             'update_time' : 150,
+             'max_cases' : 1_500,
              'cases_to_delete' : 100,
              'hidden_nodes' : 100,
              'hidden_layer' : 2}
@@ -28,7 +28,8 @@ class DQDefeatZealots2v1(DefeatZealots2v1):
         state:
         [UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT, ------> enemy position
         UP WALL, LEFT WALL, DOWN WALL, RIGHT WALL,
-        COOLDOWN]
+        COOLDOWN,
+        UP, UP LEFT, LEFT, DOWN LEFT, DOWN, DOWN RIGHT, RIGHT, UP RIGHT] ------> ally position
     '''
     def get_state(self, env):
         # prepare state

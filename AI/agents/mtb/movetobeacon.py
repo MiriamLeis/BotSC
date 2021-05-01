@@ -64,8 +64,6 @@ class MoveToBeacon(AbstractBase):
 
         self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
-        return 0
-
     '''
         Update basic values and train
     '''

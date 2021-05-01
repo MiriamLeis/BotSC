@@ -5,7 +5,7 @@ from pysc2.lib import actions, features, units
 
 from agents.abstract_base import AbstractBase
 
-class DefeatZealots2v1(AbstractBase): 
+class DefeatZealots1v2(AbstractBase): 
     '''
         Useful variables 
     '''
@@ -78,7 +78,7 @@ class DefeatZealots2v1(AbstractBase):
         self.last_can_shoot = False
         self.dead = False
 
-        return actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL]), 0
+        self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
     '''
         Update values

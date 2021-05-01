@@ -5,7 +5,7 @@ from pysc2.lib import actions, features, units
 
 from agents.abstract_base import AbstractBase
 
-class DefeatZealots(AbstractBase): 
+class InternalAgent(AbstractBase): 
     '''
         Useful variables 
     '''
@@ -35,7 +35,8 @@ class DefeatZealots(AbstractBase):
     _DOWN_RIGHT = 5
     _RIGHT = 6
     _UP_RIGHT = 7
-    _ATTACK = 8
+    _ATTACK_CLOSEST = 8
+    _ATTACK_LOWEST = 9
 
     possible_actions = [
         _UP,
@@ -46,21 +47,24 @@ class DefeatZealots(AbstractBase):
         _DOWN_RIGHT,
         _RIGHT,
         _UP_RIGHT,
-        _ATTACK
+        _ATTACK_CLOSEST,
+        _ATTACK_LOWEST
     ]
 
     UNIT_ALLY = units.Protoss.Stalker
     UNIT_ENEMY = units.Protoss.Zealot
 
-    def __init__(self):
+    def __init__(self, unit_type=units.Protoss.Stalker):
         super().__init__()
+        self.UNIT_ALLY = unit_type
+
     '''
         Return map information.
     '''
     def get_args(self):
         super().get_args()
 
-        return ['DefeatZealotswithBlink']
+        return ['DefeatZealotswithBlink_2enemies']
 
     '''
         Prepare basic parameters. This is called before start the episode.
@@ -76,7 +80,9 @@ class DefeatZealots(AbstractBase):
         self.last_dist = self._get_dist(self._get_meangroup_position(env, self.UNIT_ALLY), self._get_meangroup_position(env, self.UNIT_ENEMY))
 
         self.last_can_shoot = False
-        self.dead = False
+        self.end = False
+
+        self.current_enemies = 2
 
         self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
@@ -84,29 +90,47 @@ class DefeatZealots(AbstractBase):
         Update values
     '''
     def update(self, env, deltaTime):
+        if self.end: return
+
         super().update(env=env, deltaTime=deltaTime)
 
         self.last_can_shoot = self.current_can_shoot
-        return
         
     '''
         Do step of the environment
     '''
     def step(self, env, environment):
-        self._check_action_available(env=env)
+        if self.end: return env, self.get_end(env)
+        
+        obs = environment.step(actions=[self.select_1])
+        self.get_end(obs[0])
+
+        if self.end: return obs, self.get_end(obs[0])
+        
         obs = environment.step(actions=[self.action])
-        return obs, self.get_end(env=env)
+
+        return obs, self.get_end(obs[0])
 
     '''
         Return action of environment
     '''
     def get_action(self, env, action):
+        if self.end: return
+        
         func = actions.FunctionCall(self._NO_OP, [])
 
-        if self.possible_actions[action] == self._ATTACK:
+        if self.possible_actions[action] == self._ATTACK_CLOSEST:
             # ATTACK ACTION
             if self._ATTACK_SCREEN in env.observation.available_actions:
-                zealot = self._get_zealot(env)
+                stalkerx, stalkery = self._get_meangroup_position(env, self.unit_type)
+                zealot = self.__get_zealot_closest(env, [stalkerx,stalkery])
+                func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
+
+        elif self.possible_actions[action] == self._ATTACK_LOWEST:
+            # ATTACK ACTION
+            if self._ATTACK_SCREEN in env.observation.available_actions:
+                stalkerx, stalkery = self._get_meangroup_position(env, self.unit_type)
+                zealot = self.__get_zealot_lowest(env, [stalkerx,stalkery])
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         else:
@@ -176,6 +200,8 @@ class DefeatZealots(AbstractBase):
     '''
     def get_reward(self, env, action):
         reward = 0
+        
+        if self.end: return reward
 
         # reward for attacking
         actual_enemy_totalHP = self._get_group_totalHP(env, self.UNIT_ENEMY)
@@ -190,12 +216,18 @@ class DefeatZealots(AbstractBase):
         
         if actual_ally_totalHP < self.ally_totalHP:
             reward += -1
-            self.dead = False
+            self.end = False
 
         #update values
         self.enemy_totalHP = actual_enemy_totalHP
         self.enemy_onlyHP = actual_enemy_onlyHP
         self.ally_totalHP = actual_ally_totalHP
+
+        zealots = self.__get_group(env, units.Protoss.Zealot)
+
+        if self.current_enemies != len(zealots):
+            reward += 2
+            self.current_enemies = len(zealots)
 
         return reward
 
@@ -204,8 +236,7 @@ class DefeatZealots(AbstractBase):
     '''
     def get_end(self, env):
         stalkers = self._get_group(env, self.UNIT_ALLY)
-        self.dead = not stalkers
-        return not stalkers
+        self.end = not stalkers
 
     '''
         (Protected method)
@@ -233,13 +264,26 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return zealot with lowest healt (health + shield)
     '''
-    def _get_zealot(self, obs):
-        zealots = self._get_group(obs, self.UNIT_ENEMY)
-
+    def _get_zealot_closest(self, obs, stalker):
+        zealots = self._get_group(obs, units.Protoss.Zealot)
         # search who has lower hp and lower shield
         target = zealots[0]
         for i in range(1, len(zealots)):
-            if zealots[i].health < target.health or (zealots[i].health == target.health and zealots[i].shield < target.shield) :
+            if self.__get_dist([stalker[0], stalker[1]], [zealots[i].x, zealots[i].y]) < self.__get_dist([stalker[0], stalker[1]], [target.x, target.y]) :
+                target = zealots[i]
+                
+        return target
+
+    '''
+        (Protected method)
+        Return zealot with lowest healt (health + shield)
+    '''
+    def _get_zealot_lowest(self, obs, stalker):
+        zealots = self._get_group(obs, units.Protoss.Zealot)
+        # search who has lower hp and lower shield
+        target = zealots[0]
+        for i in range(1, len(zealots)):
+            if zealots[i].health < target.health or (zealots[i].health == target.health and zealots[i].shield < target.shield):
                 target = zealots[i]
                 
         return target
@@ -248,7 +292,6 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return totalHP of a group = (unit health plus unit shield)
     '''
-
     def _get_group_totalHP(self, obs, group_type):
         group = self._get_group(obs, group_type)
         totalHP = 0
