@@ -1,10 +1,9 @@
 import numpy as np
 import math
 
-from pysc2.lib import actions
-from pysc2.lib import features
+from pysc2.lib import actions, features
 
-from abstract_base import AbstractBase
+from agents.abstract_base import AbstractBase
 
 class MoveToBeacon(AbstractBase): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
@@ -81,7 +80,7 @@ class MoveToBeacon(AbstractBase):
     def step(self, env, environment):
         self._check_action_available(env=env)
         obs = environment.step(actions=[self.action])
-        return obs
+        return obs, self.get_end(env=env)
 
     '''
         Return action of environment

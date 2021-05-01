@@ -1,14 +1,17 @@
 import numpy as np
 import math
 
-from movetobeacon import MoveToBeacon
+from agents.mtb.movetobeacon import MoveToBeacon
 
 class DQMoveToBeacon(MoveToBeacon): 
+    def __init__(self):
+        super().__init__()
+
     '''
         Return basic information for Deep Q-Learning.
     '''
     def get_info(self):
-        return {'num_actions' : len(self.possible_actions), 
+        return {'actions' : self.possible_actions, 
              'num_states' : 8,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,

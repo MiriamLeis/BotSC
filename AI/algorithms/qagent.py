@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from abstract_agent import AbstractAgent
+from algorithms.abstract_agent import AbstractAgent
 
 class QAgent(AbstractAgent):
     def __init__(self, agent, total_episodes):

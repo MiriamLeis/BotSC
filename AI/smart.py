@@ -5,7 +5,6 @@ from tqdm import tqdm
 def smart(env, agent, filepath, episodes, steps, time_for_action):
     agent.load(filepath)
     
-    end = False
     # environment loop
     for episode in tqdm(range(1,episodes+1), ascii=True, unit="episode"):
         obs = env.reset()
@@ -29,4 +28,7 @@ def smart(env, agent, filepath, episodes, steps, time_for_action):
             else:
                 actualTime += deltaTime
             
-            obs = agent.step(env=obs[0],environment=env.get_environment())
+            obs, end = agent.step(env=obs[0],environment=env.get_environment())
+
+            if end:
+                break

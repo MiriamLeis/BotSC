@@ -1,4 +1,4 @@
-from environment import Environment
+from environment.environment import Environment
 
 from pysc2.env import sc2_env
 from pysc2 import maps

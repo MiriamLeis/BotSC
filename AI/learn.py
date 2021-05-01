@@ -12,6 +12,11 @@ def learn(env, agent, filepath, saves_filepath, episodes, episodes_for_save, ste
     for episode in tqdm(range(1,episodes+1), ascii=True, unit="episode"):
         obs = env.reset()
 
+        # learn reward for last action
+        if end:
+            agent.train()
+
+        # backup save
         if ep == episodes_for_save:
             agent.save(saves_filepath + str(episode))
             ep = 0
@@ -37,6 +42,9 @@ def learn(env, agent, filepath, saves_filepath, episodes, episodes_for_save, ste
             else:
                 actualTime += deltaTime
             
-            obs = agent.step(env=obs[0],environment=env.get_environment())
+            obs, end = agent.step(env=obs[0],environment=env.get_environment())
+
+            if end:
+                break
     
     agent.save(filepath)

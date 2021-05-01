@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from movetobeacon import MoveToBeacon
+from agents.mtb.movetobeacon import MoveToBeacon
 
 class QMoveToBeacon(MoveToBeacon):
     def __init__(self):

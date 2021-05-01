@@ -9,7 +9,7 @@ from keras import Model
 from keras.layers import Dense, Input
 from collections import deque
 
-from abstract_agent import AbstractAgent
+from algorithms.abstract_agent import AbstractAgent
 
 class DQAgent(AbstractAgent):
     def __init__(self, agent, total_episodes):
