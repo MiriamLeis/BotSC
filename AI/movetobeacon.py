@@ -48,24 +48,20 @@ class MoveToBeacon(AbstractBase):
         Return map information.
     '''
     def get_args(self):
-        return ['MoveToBeacon']
+        super().get_args()
 
-    '''
-        Return basic information.
-    '''
-    def get_info(self):
-        return{'actions' : self.possible_actions, 
-             'learning_rate' : 0.2,
-             'gamma' : 0.95}
+        return ['MoveToBeacon']
 
     '''
         Prepare basic parameters.
     '''
     def prepare(self, env):
-        beacon_new_pos = self.__get_unit_pos(env=env,view=self._PLAYER_NEUTRAL)
+        super().prepare(env=env)
+
+        beacon_new_pos = self._get_unit_pos(env=env,view=self._PLAYER_NEUTRAL)
         self.beacon_actual_pos = [beacon_new_pos[0], beacon_new_pos[1]]
 
-        self.oldDist = self.__get_dist(env)
+        self.oldDist = self._get_dist(env)
 
         self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
@@ -75,85 +71,23 @@ class MoveToBeacon(AbstractBase):
         Update basic values and train
     '''
     def update(self, env, deltaTime):
-        self.oldDist = self.__get_dist(env)
+        super().update(env=env, deltaTime=deltaTime)
+
+        self.oldDist = self._get_dist(env)
 
     '''
         Do step of the environment
     '''
     def step(self, env, environment):
-        self.__check_action_available(env=env)
+        self._check_action_available(env=env)
         obs = environment.step(actions=[self.action])
         return obs
-
-    '''
-        Return agent state
-    '''
-    def get_state(self, env):
-        state = -1
-
-        marinex, mariney = self.__get_unit_pos(env=env, view=self._PLAYER_SELF)
-        beaconx, beacony = self.__get_unit_pos(env=env, view=self._PLAYER_NEUTRAL)
-
-        direction = [beaconx - marinex, beacony - mariney]
-        dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
-
-        norm = 1 - ((dist - 4) / (55 - 5))
-        norm = round(norm,1)
-
-        if norm < 0.1:
-            state = 0
-        elif norm < 0.2:
-            state = 1
-        elif norm < 0.3:
-            state = 2
-        elif norm < 0.4:
-            state = 3
-        elif norm < 0.5:
-            state = 4
-        elif norm < 0.6:
-            state = 5
-        elif norm < 0.7:
-            state = 6
-        elif norm < 0.8:
-            state = 7
-        elif norm < 0.9:
-            state = 8
-        else:
-            state = 9
-        
-        # angle between marine and beacon
-        vector_1 = [0, -1]
-
-        np.linalg.norm(direction)
-
-        angleD = self.__ang(vector_1, direction)
-
-        if direction[0] > 0:
-            angleD = 360 - angleD
-        if angleD >= 0 and angleD < 22.5 or angleD >= 337.5 and angleD < 360:
-            state += 0
-        elif angleD >= 22.5 and angleD < 67.5:
-            state += 1 * 10
-        elif angleD >= 67.5 and angleD < 112.5:
-            state += 2 * 10
-        elif angleD >= 112.5 and angleD < 157.5:
-            state += 3 * 10
-        elif angleD >= 157.5 and angleD < 202.5:
-            state += 4 * 10
-        elif angleD >= 202.5 and angleD < 247.5:
-            state += 5 * 10
-        elif angleD >= 247.5 and angleD < 292.5:
-            state += 6 * 10
-        elif angleD >= 292.5 and angleD < 337.5:
-            state += 7 * 10
-
-        return state
 
     '''
         Return action of environment
     '''
     def get_action(self, env, action):
-        marinex, mariney = self.__get_unit_pos(env=env, view=self._PLAYER_SELF)
+        marinex, mariney = self._get_unit_pos(env=env, view=self._PLAYER_SELF)
         func = actions.FunctionCall(self._NO_OP, [])
 
         if  self.possible_actions[action] == self._MOVE_UP:
@@ -211,7 +145,7 @@ class MoveToBeacon(AbstractBase):
         Return reward
     '''
     def get_reward(self, env, action):
-        beacon_new_pos = self.__get_unit_pos(env=env, view=self._PLAYER_NEUTRAL)
+        beacon_new_pos = self._get_unit_pos(env=env, view=self._PLAYER_NEUTRAL)
 
         if self.beacon_actual_pos[0] != round(beacon_new_pos[0],1) or self.beacon_actual_pos[1] != round(beacon_new_pos[1],1):
             self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
@@ -229,18 +163,18 @@ class MoveToBeacon(AbstractBase):
         return False
 
     '''
-        (Private method)
+        (Protected method)
         Check if current action is available. If not, use default action
     '''
-    def __check_action_available(self, env):
+    def _check_action_available(self, env):
         if not (self._MOVE_SCREEN in env.observation.available_actions):
             self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
     '''
-        (Private method)
+        (Protected method)
         Return unit position
     '''
-    def __get_unit_pos(self, env, view):
+    def _get_unit_pos(self, env, view):
         ai_view = env.observation['feature_screen'][self._PLAYER_RELATIVE]
         unitys, unitxs = (ai_view == view).nonzero()
         if len(unitxs) == 0:
@@ -250,10 +184,10 @@ class MoveToBeacon(AbstractBase):
         return unitxs.mean(), unitys.mean()
 
     '''
-        (Private method)
+        (Protected method)
         Return angle formed from two lines
     '''
-    def __ang(self, lineA, lineB):
+    def _ang(self, lineA, lineB):
         # Get nicer vector form
         vA = lineA
         vB = lineB
@@ -273,12 +207,12 @@ class MoveToBeacon(AbstractBase):
         return ang_deg
 
     '''
-        (Private method)
+        (Protected method)
         Return dist from marine and beacon position
     '''
-    def __get_dist(self, env):
-        marinex, mariney = self.__get_unit_pos(env, self._PLAYER_SELF)
-        beaconx, beacony = self.__get_unit_pos(env, self._PLAYER_NEUTRAL)
+    def _get_dist(self, env):
+        marinex, mariney = self._get_unit_pos(env, self._PLAYER_SELF)
+        beaconx, beacony = self._get_unit_pos(env, self._PLAYER_NEUTRAL)
 
         newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
         return newDist

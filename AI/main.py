@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 from pysc2_env import PySC2 as Environment # environment
-from movetobeacon import MoveToBeacon as EnvAgent # environment agent
+from movetobeacon_q import QMoveToBeacon as EnvAgent # environment agent
 from qagent import QAgent as Agent # algorithm agent
 
 from learn import learn

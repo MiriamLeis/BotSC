@@ -18,14 +18,14 @@ class DQAgent(AbstractAgent):
         
         info = self.agent.get_info()
 
-        self.actions = info[1]
-        self.discount = info[3]
-        self.rep_mem_size = info[4]
-        self.min_rep_mem_size = info[5]
-        self.minibatch_size = info[6]
-        self.update_time = info[7]
-        self.max_cases = info[8]
-        self.cases_to_delete = info[9]
+        self.actions = info['actions']
+        self.discount = info['discount']
+        self.rep_mem_size = info['replay_mem_size']
+        self.min_rep_mem_size = info['min_replay_mem_size']
+        self.minibatch_size = info['minibatch_size']
+        self.update_time = info['update_time']
+        self.max_cases = info['max_cases']
+        self.cases_to_delete = info['cases_to_delete']
         self.total_episodes = total_episodes
 
         self.min_rep_mem_total = self.min_rep_mem_size
@@ -33,18 +33,18 @@ class DQAgent(AbstractAgent):
         # main model
         # model that we are not fitting every step
         # gets trained every step
-        self.model = self.__create_model(num_states=info[2], hidden_nodes=info[10], num_hidden_layers=info[11])
+        self.model = self.__create_model(num_states=info['num_states'], hidden_nodes=info['hidden_nodes'], hidden_layers=info['hidden_layer'])
 
         # target model
         # this is what we .predict against every step
-        self.target_model = self.__create_model(num_states=info[2], hidden_nodes=info[10], num_hidden_layers=info[11])
+        self.target_model = self.__create_model(num_states=info['num_states'], hidden_nodes=info['hidden_nodes'], hidden_layers=info['hidden_layer'])
         self.target_model.set_weights(self.model.get_weights()) # do it again after a while
 
     '''
         Return basic information
     '''
-    def get_info(self):
-        return self.agent.get_info()
+    def get_args(self):
+        return self.agent.get_args()
 
     '''
         Prepare agent for next episode
@@ -160,11 +160,11 @@ class DQAgent(AbstractAgent):
         (Private method)
         Create target model and network model with specify characteristics
     '''
-    def __create_model(self, num_states, hidden_nodes = 25, num_hidden_layers = 1):
+    def __create_model(self, num_states, hidden_nodes = 25, hidden_layers = 1):
         # layers
         inputs = Input(shape=(num_states,))
         x = Dense(hidden_nodes, activation='relu')(inputs)
-        for i in range(1, num_hidden_layers):
+        for i in range(1, hidden_layers):
             x = Dense(hidden_nodes + (20 * i), activation='relu')(x)
         outputs = Dense(len(self.actions))(x)
 
