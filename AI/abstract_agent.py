@@ -1,5 +1,5 @@
 class AbstractAgent:
-    def get_info(self):
+    def get_args(self):
         return
     def prepare(self, env):
         return

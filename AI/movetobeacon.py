@@ -45,10 +45,18 @@ class MoveToBeacon(AbstractBase):
         super().__init__()
     
     '''
+        Return map information.
+    '''
+    def get_args(self):
+        return ['MoveToBeacon']
+
+    '''
         Return basic information.
     '''
     def get_info(self):
-        return ['MoveToBeacon', self.possible_actions, 0.2, 0.95]
+        return{'actions' : self.possible_actions, 
+             'learning_rate' : 0.2,
+             'gamma' : 0.95}
 
     '''
         Prepare basic parameters.

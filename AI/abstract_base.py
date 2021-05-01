@@ -1,4 +1,6 @@
 class AbstractBase:
+    def get_args(self):
+        return
     def get_info(self):
         return
     def prepare(self, env):

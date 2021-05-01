@@ -45,21 +45,26 @@ class MoveToBeacon(AbstractBase):
         super().__init__()
     
     '''
+        Return map information.
+    '''
+    def get_args(self):
+        return ['MoveToBeacon']
+    
+    '''
         Return basic information.
     '''
     def get_info(self):
-        return ['MoveToBeacon', 
-                len(self.possible_actions),
-                8, 
-                0.99, 
-                50_000, 
-                256, 
-                64, 
-                5, 
-                1024, 
-                64,
-                25,
-                1]
+        return {'num_actions' : len(self.possible_actions), 
+             'num_states' : 8,
+             'discount' : 0.99,
+             'replay_mem_size' : 50_000,
+             'min_replay_mem_size' : 256,
+             'minibatch_size' : 64,
+             'update_time' : 5,
+             'max_cases' : 1024,
+             'cases_to_delete' : 64,
+             'hidden_nodes' : 25,
+             'hidden_layer' : 1}
 
     '''
         Prepare basic parameters.

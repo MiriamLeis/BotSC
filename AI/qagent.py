@@ -10,9 +10,9 @@ class QAgent(AbstractAgent):
 
         info = self.agent.get_info()
 
-        self.actions = info[1]
-        self.lr = info[2]
-        self.gamma = info[3]
+        self.actions = info['actions']
+        self.lr = info['learning_rate']
+        self.gamma = info['gamma']
         self.total_episodes = total_episodes
 
         self.states_list = set()
@@ -21,8 +21,8 @@ class QAgent(AbstractAgent):
     '''
         Return basic information
     '''
-    def get_info(self):
-        return self.agent.get_info()
+    def get_args(self):
+        return self.agent.get_args()
 
     '''
         Prepare agent for next episode
