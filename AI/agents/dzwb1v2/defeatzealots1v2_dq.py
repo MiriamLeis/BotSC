@@ -1,11 +1,19 @@
 import numpy as np
 import math
 
-from agents.dzwb1v2.defeatzealots1v2 import DefeatZealots1v2
+from agents.dzwb.defeatzealots import DefeatZealots
 
-class DQDefeatZealots1v2(DefeatZealots1v2): 
+class DQDefeatZealots1v2(DefeatZealots): 
     def __init__(self):
         super().__init__()
+        
+    '''
+        Return map information.
+    '''
+    def get_args(self):
+        super().get_args()
+
+        return ['DefeatZealotswithBlink_2enemies']
 
     '''
         Return basic information for Deep Q-Learning.

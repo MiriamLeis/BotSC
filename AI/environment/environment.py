@@ -1,5 +1,5 @@
 class Environment:
-    def init(self, args=[]):
+    def __init__(self, args=[]):
         return
     def get_environment(self):
         return

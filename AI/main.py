@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 from environment.pysc2_env import PySC2 as Environment # environment
-from agents.mtb.movetobeacon_dq import DQMoveToBeacon as EnvAgent # environment agent
+from agents.dzwb1v2.defeatzealots1v2_dq import DQDefeatZealots1v2 as EnvAgent # environment agent
 from algorithms.dqagent import DQAgent as Agent # algorithm agent
 
 from learn import learn
@@ -17,10 +17,10 @@ flags.DEFINE_integer('episodes', 1000, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 1900, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 50, 'Episodes until backup save.', lower_bound=0)
 flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lower_bound=0.0)
-flags.DEFINE_boolean('learn', True, 'Agent will learn.')
+flags.DEFINE_boolean('learn', False, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
-flags.DEFINE_string('filename', 'mtb', 'Filename for load or save.')
+flags.DEFINE_string('filename', 'dzwb1v2', 'Filename for load or save.')
 
 FLAGS(sys.argv)
 
