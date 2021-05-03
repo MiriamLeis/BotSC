@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 from environment.pysc2_env import PySC2 as Environment # environment
-from agents.dzwb1v2.defeatzealots1v2_dq import DQDefeatZealots1v2 as EnvAgent # environment agent
+from agents.bm.buildmarines import BuildMarines as EnvAgent # environment agent
 from algorithms.dqagent import DQAgent as Agent # algorithm agent
 
 from learn import learn

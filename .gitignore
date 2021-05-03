@@ -28,7 +28,9 @@
 *.out
 *.app
 
+*.pyc
+
 Release/
 Debug/
-*/__pycache__/
+*/**/*/__pycache__/
 */saves_episode/

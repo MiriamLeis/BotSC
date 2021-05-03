@@ -5,7 +5,7 @@ from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.lib import units
 
-from abstract_base import AbstractBase
+from agents.abstract_base import AbstractBase
 
 class BuildMarines(AbstractBase): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
@@ -61,28 +61,35 @@ class BuildMarines(AbstractBase):
 
     def __init__(self):
         super().__init__()
+
+    def get_args(self):
+        super().get_args()
+
+        return ['BuildMarines']
     
     '''
         Return basic information.
     '''
     def get_info(self):
-        return ['BuildMarines', 
-                self.possible_actions,
-                31, 
-                0.99, 
-                50_000, 
-                1024, 
-                264, 
-                10, 
-                2048, 
-                128,
-                100,
-                3]
+        return {
+            'actions' : self.possible_actions, 
+             'num_states' : 31,
+             'discount' : 0.99,
+             'replay_mem_size' : 50_000,
+             'min_replay_mem_size' : 1024,
+             'minibatch_size' : 264,
+             'update_time' : 10,
+             'max_cases' : 2048,
+             'cases_to_delete' : 128,
+             'hidden_nodes' : 100,
+             'hidden_layer' : 3}
 
     '''
         Prepare basic parameters.
     '''
     def prepare(self, env):
+        super().prepare(env=env)
+
         self.workersHarvesting = 12
         self.maxHouses = 20
         self.maxBarracks = 8
@@ -95,6 +102,8 @@ class BuildMarines(AbstractBase):
         Update basic values and train
     '''
     def update(self, env, deltaTime):
+        super().update(env=env, deltaTime=deltaTime)
+
         self.oldDist = self.__get_dist(env)
 
     '''
@@ -103,10 +112,9 @@ class BuildMarines(AbstractBase):
     def step(self, env, environment):
         for func in self.action:
             finalAct = self.__check_action_available(env=env, action=func)
-            obs = environment.step(actions=[finalAct])
-            env = obs[0]
+            env = environment.step(actions=[finalAct])
         self.action = [actions.FunctionCall(self._NO_OP, [])]
-        return obs
+        return env,self.get_end(env=env)
 
     '''
         Return agent state
