@@ -17,14 +17,14 @@ flags.DEFINE_integer('episodes', 1000, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 1900, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 50, 'Episodes until backup save.', lower_bound=0)
 flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lower_bound=0.0)
-flags.DEFINE_boolean('learn', False, 'Agent will learn.')
+flags.DEFINE_boolean('learn', True, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
 flags.DEFINE_string('filename', 'dzwb1v2', 'Filename for load or save.')
 
 FLAGS(sys.argv)
 
-FILEPATH_SAVES = 'saves_episode\\' + FLAGS.filename + '\\'
+FILEPATH_SAVES = '\\saves_episode\\' + FLAGS.filename + '\\'
 
 def main():
     # create load and save filepath directories if they dont exist

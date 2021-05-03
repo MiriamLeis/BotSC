@@ -40,6 +40,9 @@ class DQAgent(AbstractAgent):
         self.target_model = self.__create_model(num_states=info['num_states'], hidden_nodes=info['hidden_nodes'], hidden_layers=info['hidden_layer'])
         self.target_model.set_weights(self.model.get_weights()) # do it again after a while
 
+        self.replay_memory = deque(maxlen=self.rep_mem_size)
+        self.target_update_counter = 0
+
     '''
         Return basic information
     '''
@@ -76,8 +79,7 @@ class DQAgent(AbstractAgent):
         return self.agent.step(env=env,environment=environment)
 
     def train(self):
-        return
-        self.__update_replay_memory(self, transition=(self.current_state, self.action, self.reward, self.new_state))
+        self.__update_replay_memory(transition=(self.current_state, self.action, self.reward, self.new_state))
 
         if len(self.replay_memory) < self.min_rep_mem_total:
             return
