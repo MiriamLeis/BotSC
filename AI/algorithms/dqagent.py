@@ -60,6 +60,12 @@ class DQAgent(AbstractAgent):
     def update(self, env, deltaTime):
         self.new_state = self.agent.get_state(env)
         self.reward = self.agent.get_reward(env, self.action)
+
+        print("Recompensa : ", self.reward)
+        print("Accion : ", self.action)
+        print("Estado : ", self.current_state)
+        print("Nuevo Estado: ", self.new_state)
+        print("---")
         self.agent.update(env, deltaTime)
         
     '''
@@ -76,7 +82,6 @@ class DQAgent(AbstractAgent):
         return self.agent.step(env=env,environment=environment)
 
     def train(self):
-        return
         self.__update_replay_memory(self, transition=(self.current_state, self.action, self.reward, self.new_state))
 
         if len(self.replay_memory) < self.min_rep_mem_total:
