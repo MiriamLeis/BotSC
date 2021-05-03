@@ -63,6 +63,12 @@ class DQAgent(AbstractAgent):
     def update(self, env, deltaTime):
         self.new_state = self.agent.get_state(env)
         self.reward = self.agent.get_reward(env, self.action)
+
+        print("Recompensa : ", self.reward)
+        print("Accion : ", self.action)
+        print("Estado : ", self.current_state)
+        print("Nuevo Estado: ", self.new_state)
+        print("---")
         self.agent.update(env, deltaTime)
         
     '''

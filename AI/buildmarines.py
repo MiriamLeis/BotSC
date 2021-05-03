@@ -68,7 +68,7 @@ class BuildMarines(AbstractBase):
     def get_info(self):
         return ['BuildMarines', 
                 self.possible_actions,
-                8, 
+                31, 
                 0.99, 
                 50_000, 
                 1024, 
@@ -151,8 +151,7 @@ class BuildMarines(AbstractBase):
         for i in range(22, 22 + self.__get_buildings_building(env, self._TERRAN_BARRACKS)):
             state[i] = 1
             
-        print(state)
-        return 0
+        return state
 
 
 
