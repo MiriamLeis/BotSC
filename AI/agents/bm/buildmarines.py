@@ -129,8 +129,8 @@ class BuildMarines(AbstractBase):
             state[0] = 0
 
 
-        percentageHarvesting = self.workersHarvesting / 16
-        state[1] = percentageHarvesting
+        
+        state[1] = self.__get_percentage_workers_harvesting(env)
 
         percentageFood = env.observation.player.food_used / env.observation.player.food_cap
         state[2] = percentageFood
@@ -154,7 +154,7 @@ class BuildMarines(AbstractBase):
             state[i] = 1
         for i in range(15, 15 + self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT)):
             state[i] = 1
-        for i in range(22, 22 + self.__get_buildings_building(env, self._TERRAN_BARRACKS)):
+        for i in range(23, 23 + self.__get_buildings_building(env, self._TERRAN_BARRACKS)):
             state[i] = 1
             
         return state
@@ -342,6 +342,16 @@ class BuildMarines(AbstractBase):
             return used / built
 
     def __get_buildings_building(self, obs, buildingType):
+        workers = self.__get_group(obs, self._TERRAN_SCV)
+        edificios = 0
+        for i in range(0, len(workers)):
+            if workers[i].active == 1 and buildingType == self._TERRAN_BARRACKS and workers[i].order_id_0 == 185:
+                edificios += 1
+            elif workers[i].active == 1 and buildingType == self._TERRAN_SUPLY_DEPOT and workers[i].order_id_0 == 222:
+                edificios += 1
+        return edificios
+
+
         barracks = self.__get_group(obs, buildingType)
         built = 0
         for i in range(0, len(barracks)):
@@ -355,8 +365,9 @@ class BuildMarines(AbstractBase):
             if workers[i].active == 1 and (workers[i].order_id_0 == 359 or workers[i].order_id_0 == 362):
                 return [workers[i].x, workers[i].y]
     
-    def _get_percentage_workers_harvesting(self, env):
+    def __get_percentage_workers_harvesting(self, env):
         commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+        return commandCenter[0].assigned_harvesters / commandCenter[0].ideal_harvesters
         
 
     def __get_unused_barrack(self, obs):
