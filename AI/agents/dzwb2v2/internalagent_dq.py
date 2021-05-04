@@ -17,6 +17,7 @@ class DQInternalAgent(InternalAgent):
              'num_states' : 21,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,
+             'learn_every' : 100,
              'min_replay_mem_size' : 500,
              'minibatch_size' : 128,
              'update_time' : 150,

@@ -23,6 +23,7 @@ class DQDefeatZealots1v2(DefeatZealots):
              'num_states' : 13,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,
+             'learn_every' : 80,
              'min_replay_mem_size' : 150,
              'minibatch_size' : 64,
              'update_time' : 50,

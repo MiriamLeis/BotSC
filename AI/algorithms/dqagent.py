@@ -21,14 +21,13 @@ class DQAgent(AbstractAgent):
         self.actions = info['actions']
         self.discount = info['discount']
         self.rep_mem_size = info['replay_mem_size']
-        self.min_rep_mem_size = info['min_replay_mem_size']
+        self.min_rep_mem_size = info['learn_every']
+        self.min_rep_mem_total = info['min_replay_mem_size']
         self.minibatch_size = info['minibatch_size']
         self.update_time = info['update_time']
         self.max_cases = info['max_cases']
         self.cases_to_delete = info['cases_to_delete']
         self.total_episodes = total_episodes
-
-        self.min_rep_mem_total = self.min_rep_mem_size
 
         # main model
         # model that we are not fitting every step

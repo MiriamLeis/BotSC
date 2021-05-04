@@ -76,6 +76,7 @@ class BuildMarines(AbstractBase):
              'num_states' : 31,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,
+             'learn_every' : 150,
              'min_replay_mem_size' : 1024,
              'minibatch_size' : 264,
              'update_time' : 10,
@@ -90,7 +91,6 @@ class BuildMarines(AbstractBase):
     def prepare(self, env):
         super().prepare(env=env)
 
-        self.workersHarvesting = 12
         self.maxHouses = 20
         self.maxBarracks = 8
         self.action = actions.FunctionCall(self._NO_OP, [])
@@ -103,8 +103,6 @@ class BuildMarines(AbstractBase):
     '''
     def update(self, env, deltaTime):
         super().update(env=env, deltaTime=deltaTime)
-
-        self.oldDist = self.__get_dist(env)
 
     '''
         Do step of the environment
@@ -350,11 +348,16 @@ class BuildMarines(AbstractBase):
             if barracks[i].build_progress < 100:
                 built += 1
         return built
+
     def __get_harvesting_worker(self, obs):
         workers = self.__get_group(obs, self._TERRAN_SCV)
         for i in range(0, len(workers)):
-            if workers[i].active == 1:
+            if workers[i].active == 1 and (workers[i].order_id_0 == 359 or workers[i].order_id_0 == 362):
                 return [workers[i].x, workers[i].y]
+    
+    def _get_percentage_workers_harvesting(self, env):
+        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+        
 
     def __get_unused_barrack(self, obs):
         barracks = self.__get_group(obs, self._TERRAN_BARRACKS)

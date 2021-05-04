@@ -15,6 +15,7 @@ class DQMoveToBeacon(MoveToBeacon):
              'num_states' : 8,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,
+             'learn_every' : 256,
              'min_replay_mem_size' : 256,
              'minibatch_size' : 64,
              'update_time' : 5,
