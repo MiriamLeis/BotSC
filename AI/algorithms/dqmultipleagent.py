@@ -37,6 +37,19 @@ class DQMultipleAgent(AbstractAgent):
             net.prepare(env=env, ep=ep)
 
     '''
+        Return if episode must end
+    '''
+    def get_end(self, env):
+        not_end = True
+
+        for net in self.networks:
+            this_end = net.get_end(env)
+            if not this_end and not_end: 
+                not_end = False
+
+        return not_end
+
+    '''
         Update basic values
     '''
     def update(self, env, deltaTime):
@@ -55,17 +68,10 @@ class DQMultipleAgent(AbstractAgent):
         Return PySC2 environment obs
     '''
     def step(self, env, environment):
-        not_end = True
-        
         for net in self.networks:
-            env, _ = net.step(env=env, environment=environment)
-
-        for net in self.networks:
-            this_end = net.get_agent().get_end(env)
-            if not this_end and not_end: 
-                not_end = False
+            env = net.step(env=env, environment=environment)
         
-        return env, not_end
+        return env
 
     def train(self):
         for net in self.networks:
@@ -101,7 +107,7 @@ class DQMultipleAgent(AbstractAgent):
     def save(self, filepath):
         cont = 1
         for net in self.networks:
-            net.save(filepath=filepath + '_' + cont)
+            net.save(filepath=filepath + '_' + str(cont))
             cont += 1
 
     '''

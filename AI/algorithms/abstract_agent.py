@@ -3,6 +3,8 @@ class AbstractAgent:
         return
     def prepare(self, env):
         return
+    def get_end(self, env):
+        return
     def update(self, env, deltaTime):
         return
     def late_update(self, env, deltaTime):

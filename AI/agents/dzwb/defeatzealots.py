@@ -95,7 +95,7 @@ class DefeatZealots(AbstractBase):
     def step(self, env, environment):
         self._check_action_available(env=env)
         env = environment.step(actions=[self.action])
-        return env, self.get_end(env=env)
+        return env
 
     '''
         Return action of environment
@@ -205,7 +205,7 @@ class DefeatZealots(AbstractBase):
     def get_end(self, env):
         stalkers = self._get_group(env, self.UNIT_ALLY)
         self.dead = not stalkers
-        return not stalkers
+        return self.dead
 
     '''
         (Protected method)

@@ -104,17 +104,17 @@ class InternalAgent(AbstractBase):
         Do step of the environment
     '''
     def step(self, env, environment):
-        if self.end: return env, self.get_end(env)
+        if self.end: return env
         
         env = environment.step(actions=[self.select])
         self.get_end(env)
 
-        if self.end: return env, self.get_end(env)
+        if self.end: return env
         
         self._check_action_available(env=env)
         env = environment.step(actions=[self.action])
 
-        return env, self.get_end(env)
+        return env
 
     '''
         Return action of environment
@@ -242,6 +242,7 @@ class InternalAgent(AbstractBase):
     def get_end(self, env):
         ally = self._get_group(env, self.UNIT_ALLY)
         self.end = not ally
+        return self.end
 
     '''
         (Protected method)

@@ -15,7 +15,9 @@ def smart(environment, agent, filepath, episodes, steps, time_for_action):
         lastTime = 0.0
 
         for step in range(steps):
-            # get deltaTime
+            if agent.get_end(env):
+                break
+            
             realTime = ((env).observation["game_loop"] / 16)
             deltaTime = realTime - lastTime
             lastTime = realTime
@@ -28,7 +30,4 @@ def smart(environment, agent, filepath, episodes, steps, time_for_action):
             else:
                 actualTime += deltaTime
             
-            env, end = agent.step(env=env,environment=environment)
-
-            if end:
-                break
+            env = agent.step(env=env,environment=environment)

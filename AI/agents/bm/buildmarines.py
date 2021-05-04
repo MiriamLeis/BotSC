@@ -248,7 +248,8 @@ class BuildMarines(AbstractBase):
         Return True if we must end this episode
     '''
     def get_end(self, env):
-        return False
+        minerals = self.__get_group(env, self._MINERAL_FIELD)
+        return not minerals
 
     '''
         (Private method)

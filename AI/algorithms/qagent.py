@@ -33,6 +33,12 @@ class QAgent(AbstractAgent):
         self.current_state = self.agent.get_state(env)
 
     '''
+        Return if episode must end
+    '''
+    def get_end(self, env):
+        return self.agent.get_end(env)
+
+    '''
         Update basic values
     '''
     def update(self, env, deltaTime):

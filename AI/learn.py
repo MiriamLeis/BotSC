@@ -28,7 +28,9 @@ def learn(environment, agent, filepath, saves_filepath, episodes, episodes_for_s
         lastTime = 0.0
 
         for step in range(steps):
-            # get deltaTime
+            if agent.get_end(env):
+                break
+
             realTime = ((env).observation["game_loop"] / 16)
             deltaTime = realTime - lastTime
             lastTime = realTime
@@ -42,9 +44,6 @@ def learn(environment, agent, filepath, saves_filepath, episodes, episodes_for_s
             else:
                 actualTime += deltaTime
             
-            env, end = agent.step(env=env,environment=environment)
-
-            if end:
-                break
+            env = agent.step(env=env,environment=environment)
     
     agent.save(filepath)

@@ -78,7 +78,7 @@ class MoveToBeacon(AbstractBase):
     def step(self, env, environment):
         self._check_action_available(env=env)
         env = environment.step(actions=[self.action])
-        return env, self.get_end(env=env)
+        return env
 
     '''
         Return action of environment
