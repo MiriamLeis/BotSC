@@ -69,11 +69,11 @@ class DQAgent(AbstractAgent):
         self.new_state = self.agent.get_state(env)
         self.reward = self.agent.get_reward(env, self.action)
 
-        print("Recompensa : ", self.reward)
-        print("Accion : ", self.action)
-        print("Estado : ", self.current_state)
-        print("Nuevo Estado: ", self.new_state)
-        print("---")
+        #print("Recompensa : ", self.reward)
+        #print("Accion : ", self.action)
+        #print("Estado : ", self.current_state)
+        #print("Nuevo Estado: ", self.new_state)
+        #print("---")
         self.agent.update(env, deltaTime)
         
     '''
@@ -144,6 +144,9 @@ class DQAgent(AbstractAgent):
         cases = self.__get_qs(self.current_state)
         self.action = np.argmax(cases)
         self.agent.get_action(env=env, action=self.action)
+        print("Estado: ", self.current_state)
+        print("Casos: ", cases)
+        print("---")
 
     '''
         Choose action for current state.

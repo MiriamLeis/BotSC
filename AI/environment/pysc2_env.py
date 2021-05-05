@@ -27,7 +27,7 @@ class PySC2(Environment):
         return obs[0]
 
     def step(self, actions):
-        super().step()
+        super().step(actions=actions)
         obs = self.env.step(actions=actions)
         return obs[0]
 

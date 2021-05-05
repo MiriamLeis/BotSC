@@ -96,6 +96,9 @@ class BuildMarines(AbstractBase):
         self.action = actions.FunctionCall(self._NO_OP, [])
         self.actualMarines = 0
 
+        self.ignored_steps = 25
+        self.cont_steps = 0
+
         return 0
 
     '''
@@ -103,6 +106,7 @@ class BuildMarines(AbstractBase):
     '''
     def update(self, env, deltaTime):
         super().update(env=env, deltaTime=deltaTime)
+        self.cont_steps += 1
 
     '''
         Do step of the environment
@@ -112,24 +116,31 @@ class BuildMarines(AbstractBase):
             finalAct = self.__check_action_available(env=env, action=func)
             env = environment.step(actions=[finalAct])
         self.action = [actions.FunctionCall(self._NO_OP, [])]
-        return env,self.get_end(env=env)
+        return env
 
     '''
         Return agent state
+        [PERCENTAGE IDLE WORKERS,
+        PERCENTAGE HARVESTING WORKERS,
+        PERCENTAGE FOOD,
+        PERCENTAGE MINERALS,
+        PERCENTAGE HOUSES BUILD,
+        PERCENTAGE BARRACKS BUILD,
+        TRAINING WORKER,
+        BARRACK 1 USED, BARRACK 2 USED, BARRACK 3 USED, BARRACK 4 USED, BARRACK 5 USED, BARRACK 6 USED, BARRACK 7 USED, BARRACK 8 USED, 
+        HOUSE 1 BUILDING, HOUSE 2 BUILDING, HOUSE 3 BUILDING, HOUSE 4 BUILDING, HOUSE 5 BUILDING, HOUSE 6 BUILDING, HOUSE 7 BUILDING, HOUSE 8 BUILDING, 
+        BARRACKS 1 BUILDING, BARRACKS 2 BUILDING, BARRACKS 3 BUILDING, BARRACKS 4 BUILDING, BARRACKS 5 BUILDING, BARRACKS 6 BUILDING, BARRACKS 7 BUILDING, BARRACKS 8 BUILDING, ]
     '''
     def get_state(self, env):
+        state = [0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0]
 
-
-        state = [0, 0, 0, 0, 0,0, 0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0]
-
+        if self.cont_steps < self.ignored_steps: return state
 
         if len(self.__get_group(env, self._TERRAN_SCV)) - 12 > 0:
             state[0] = env.observation.player.idle_worker_count / (len(self.__get_group(env, self._TERRAN_SCV)) - 12)
         else:
             state[0] = 0
 
-
-        
         state[1] = self.__get_percentage_workers_harvesting(env)
 
         percentageFood = env.observation.player.food_used / env.observation.player.food_cap
@@ -165,67 +176,91 @@ class BuildMarines(AbstractBase):
         Return action of environment
     '''
     def get_action(self, env, action):
-        marinex, mariney = self.__get_unit_pos(env=env, view=self._PLAYER_SELF)
         func = [actions.FunctionCall(self._NO_OP, [])]
+
+        if self.cont_steps < self.ignored_steps: 
+            self.action = func
+            return
+
         commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
 
+        # harvest with idle worker
         if  self.possible_actions[action] == self._IDLE_WORKER_HARVEST:
             minerals = self.__get_group(env, self._MINERAL_FIELD)
             mineral = minerals[random.randint(0, len(minerals)-1)]
             
             func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]),actions.FunctionCall(self._HARVEST_GATHER_SCREEN, [self._NOT_QUEUED, [mineral.x,mineral.y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
 
+        # build house with idle worker
         elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_HOUSE:
-            x = 0
-            y = 0
-            if (len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) < 11):
-                x = 3.5 + (len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) * 6)
+            x = y = 0
+            buildings = self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) + self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT)
+            if (buildings < 11):
+                x = 3.5 + (buildings * 6)
                 y = 43.5
             else:
-                x = 15.5 + ((len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT))-11) * 6)
+                x = 15.5 + ((buildings-11) * 6)
                 y = 37.5
             func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(self._BUILD_SUPPLYDEPOT, [self._NOT_QUEUED, [x,y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
 
-            if len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) >= self.maxHouses:
+            if buildings >= self.maxHouses:
                 func = [actions.FunctionCall(self._NO_OP, [])]
 
+        # build barrack with idle worker
         elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_BARRACKS:
-            func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(self._BUILD_BARRACKS, [self._NOT_QUEUED, [60.5 - (len(self.__get_group(env, self._TERRAN_BARRACKS)) * 8), 5]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
-            if len(self.__get_group(env, self._TERRAN_BARRACKS)) >= self.maxBarracks:
+            buildings = self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) + self.__get_buildings_building(env, self._TERRAN_BARRACKS)
+            func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(self._BUILD_BARRACKS, [self._NOT_QUEUED, [60.5 - (buildings * 8), 5]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+            if buildings >= self.maxBarracks:
                 func = [actions.FunctionCall(self._NO_OP, [])]
 
+        # build house with worker
         elif self.possible_actions[action] == self._RANDOM_WORKER_BUILD_HOUSE:
-            x = 0
-            y = 0
-            if (len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) < 11):
-                x = 3.5 + (len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) * 6)
+            x = y = 0
+            buildings = self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) + self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT)
+            if (buildings < 11):
+                x = 3.5 + (buildings * 6)
                 y = 43.5
             else:
-                x = 15.5 + ((len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT))-11) * 6)
+                x = 15.5 + ((buildings-11) * 6)
                 y = 37.5
-            point = self.__get_harvesting_worker(env)
-            func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(self._BUILD_SUPPLYDEPOT, [self._NOT_QUEUED, [x,y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
 
-            if len(self.__get_group(env, self._TERRAN_SUPLY_DEPOT)) >= self.maxHouses:
+            point = self.__get_harvesting_worker(env)
+            if point == None:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+            else:
+                func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(self._BUILD_SUPPLYDEPOT, [self._NOT_QUEUED, [x,y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+
+            if buildings >= self.maxHouses:
                 func = [actions.FunctionCall(self._NO_OP, [])]
 
+        # build barrack with worker
         elif self.possible_actions[action] == self._RANDOM_WORKER_BUILD_BARRACKS:
             point = self.__get_harvesting_worker(env)
-            func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(self._BUILD_BARRACKS, [self._NOT_QUEUED, [60.5 - (len(self.__get_group(env, self._TERRAN_BARRACKS)) * 8), 5]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
-            if len(self.__get_group(env, self._TERRAN_BARRACKS)) >= self.maxBarracks:
+            if point == None:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+            else:
+                buildings = self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) + self.__get_buildings_building(env, self._TERRAN_BARRACKS)
+                func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(self._BUILD_BARRACKS, [self._NOT_QUEUED, [60.5 - (buildings * 8), 5]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+            
+            if buildings >= self.maxBarracks:
                 func = [actions.FunctionCall(self._NO_OP, [])]
 
+        # create worker
         elif self.possible_actions[action] == self._CREATE_WORKER:
             if self.__get_group(env, self._TERRAN_COMMANDCENTER)[0].order_progress_0 > 0:
                 func = [actions.FunctionCall(self._NO_OP, [])]
             else:
                 func = [actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]]), actions.FunctionCall(self._RALLY_WORKERS_SCREEN, [self._NOT_QUEUED, [commandCenter[0].x,commandCenter[0].y]]),actions.FunctionCall(self._TRAIN_WORKER, [self._NOT_QUEUED]),actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+        
+        # create marine
         elif self.possible_actions[action] == self._CREATE_MARINES:
             barrack = self.__get_unused_barrack(env)
             if barrack[0]== -1 and barrack[1] == -1:
                 func = [actions.FunctionCall(self._NO_OP, [])]
             else:
                 func = [actions.FunctionCall(self._SELECT_POINT, [[0], [barrack[0],barrack[1]]]), actions.FunctionCall(self._TRAIN_MARINE, [self._NOT_QUEUED]),actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+        
+        # do nothing
         elif self.possible_actions[action] == self._DO_NOTHING:
             func = [actions.FunctionCall(self._NO_OP, [])]
         
@@ -235,7 +270,6 @@ class BuildMarines(AbstractBase):
         Return reward
     '''
     def get_reward(self, env, action):
-
         reward = 0
         if len(self.__get_group(env, self._TERRAN_MARINE)) > self.actualMarines:
             reward = len(self.__get_group(env, self._TERRAN_MARINE)) - self.actualMarines
@@ -261,8 +295,6 @@ class BuildMarines(AbstractBase):
             return [actions.FunctionCall(self._NO_OP, [])]
         else:
             return action
-
-            
 
     '''
         (Private method)
