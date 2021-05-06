@@ -272,7 +272,8 @@ class BuildMarines(AbstractBase):
     def get_reward(self, env, action):
         reward = 0
         if len(self.__get_group(env, self._TERRAN_MARINE)) > self.actualMarines:
-            reward = len(self.__get_group(env, self._TERRAN_MARINE)) - self.actualMarines
+            reward = self.actualMarines
+            #reward = len(self.__get_group(env, self._TERRAN_MARINE)) - self.actualMarines
             self.actualMarines = len(self.__get_group(env, self._TERRAN_MARINE))
 
 
