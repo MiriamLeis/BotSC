@@ -101,6 +101,10 @@ class DQAgent(AbstractAgent):
         self.min_rep_mem_total += self.min_rep_mem_size
 
         minibatch = random.sample(self.replay_memory, self.minibatch_size)
+        
+        good = [x for x in self.replay_memory if x[2] not in [0]]
+        minibatch += good
+        self.replay_memory = [x for x in self.replay_memory if x not in good]
 
         current_states = np.array([transition[0] for transition in minibatch])
         current_qs_list = self.model.predict(current_states)
@@ -153,7 +157,8 @@ class DQAgent(AbstractAgent):
         This action could be random or the one with maxium reward, depending on epsilon value.
     '''
     def choose_action(self, env):
-        if np.random.rand() > self.epsilon:
+        if True:
+        #if np.random.rand() > self.epsilon:
             self.action = np.random.choice(self.actions)
             self.agent.get_action(env=env, action=self.action)
         else:
@@ -219,4 +224,5 @@ class DQAgent(AbstractAgent):
         Update epsilon value
     '''
     def __set_epsilon(self, episode):
+        #self.epsilon=1
         self.epsilon = (episode / (self.total_episodes - (self.total_episodes / 2)))

@@ -13,12 +13,12 @@ from smart import smart
 from absl import flags
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer('episodes', 20, 'Number of episodes.', lower_bound=0)
+flags.DEFINE_integer('episodes', 10, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 14250, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 2, 'Episodes until backup save.', lower_bound=0)
-flags.DEFINE_float('time_for_action', 1.0, 'Time until choose new action.', lower_bound=0.0)
+flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lower_bound=0.0)
 flags.DEFINE_boolean('learn', True, 'Agent will learn.')
-flags.DEFINE_boolean('load', True, 'Agent will load learning information. Not needed if it is not going to learn.')
+flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
 flags.DEFINE_string('filename', 'bm', 'Filename for load or save.')
 
@@ -28,11 +28,11 @@ FILEPATH_SAVES = '\\saves_episode\\' + FLAGS.filename + '\\'
 
 def main():
     # create load and save filepath directories if they dont exist
-    if not os.path.exists(FLAGS.filepath):
-        os.makedirs(FLAGS.filepath)
+    if not os.path.exists(os.getcwd() + FLAGS.filepath):
+        os.makedirs(os.getcwd() + FLAGS.filepath)
     # create backup save filepath directories if they dont exist
-    if not os.path.exists(FILEPATH_SAVES):
-        os.makedirs(FILEPATH_SAVES)
+    if not os.path.exists(os.getcwd() + FILEPATH_SAVES):
+        os.makedirs(os.getcwd() + FILEPATH_SAVES)
 
     # initialize agent and environment
     agent = Agent(agent=EnvAgent(),total_episodes=FLAGS.episodes)
