@@ -242,53 +242,47 @@ class BuildMarines(AbstractBase):
 
         # build house with idle worker
         elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_HOUSE:
-            if self.houses_build >= self.maxHouses or env.observation.player.idle_worker_count <= 0 or env.observation.player.minerals < 100:
-                func = [actions.FunctionCall(self._NO_OP, [])]
-            else:
-                x = self.houses_positions[self.houses_build]["x"]
-                y = self.houses_positions[self.houses_build]["y"]
-                func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(self._BUILD_SUPPLYDEPOT, [self._NOT_QUEUED, [x,y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
-                self.houses_build += 1
+            self.houses_build, func = self.__build_with_idle_worker(env=env, 
+                                                                minerals_limit=100,
+                                                                max_number=self.maxHouses, 
+                                                                current_built=self.houses_build, 
+                                                                building_positions=self.houses_positions, 
+                                                                build_action_type=self._BUILD_SUPPLYDEPOT, 
+                                                                build_type=self._TERRAN_SUPLY_DEPOT, 
+                                                                other_build_type=None)
 
         # build barrack with idle worker
         elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_BARRACKS:
-            if self.barracks_build >= self.maxBarracks or env.observation.player.idle_worker_count <= 0 or env.observation.player.minerals < 150 or self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) <= 0:
-                func = [actions.FunctionCall(self._NO_OP, [])]
-            else:
-                x = self.barracks_positions[self.barracks_build]["x"]
-                y = self.barracks_positions[self.barracks_build]["y"]
-                func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(self._BUILD_BARRACKS, [self._NOT_QUEUED, [x, y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
-                self.barracks_build += 1
+            self.barracks_build, func = self.__build_with_idle_worker(env=env, 
+                                                                minerals_limit=150,
+                                                                max_number=self.maxBarracks, 
+                                                                current_built=self.barracks_build, 
+                                                                building_positions=self.barracks_positions, 
+                                                                build_action_type=self._BUILD_BARRACKS, 
+                                                                build_type=self._TERRAN_BARRACKS, 
+                                                                other_build_type=self._TERRAN_SUPLY_DEPOT)
 
         # build house with worker
         elif self.possible_actions[action] == self._RANDOM_WORKER_BUILD_HOUSE:
-            if self.houses_build >= self.maxHouses or env.observation.player.minerals < 100:
-                func = [actions.FunctionCall(self._NO_OP, [])]
-            else:
-                x = self.houses_positions[self.houses_build]["x"]
-                y = self.houses_positions[self.houses_build]["y"]
-
-                point = self.__get_harvesting_worker(env)
-                if point == None:
-                    func = [actions.FunctionCall(self._NO_OP, [])]
-                else:
-                    func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(self._BUILD_SUPPLYDEPOT, [self._NOT_QUEUED, [x,y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
-                    self.houses_build += 1
+            self.houses_build, func = self.__build_with_random_worker(env=env, 
+                                                                minerals_limit=100,
+                                                                max_number=self.maxHouses, 
+                                                                current_built=self.houses_build, 
+                                                                building_positions=self.houses_positions, 
+                                                                build_action_type=self._BUILD_SUPPLYDEPOT, 
+                                                                build_type=self._TERRAN_SUPLY_DEPOT, 
+                                                                other_build_type=None)
 
         # build barrack with worker
         elif self.possible_actions[action] == self._RANDOM_WORKER_BUILD_BARRACKS:
-            if self.barracks_build >= self.maxBarracks or env.observation.player.minerals < 150 or self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) <= 0:
-                func = [actions.FunctionCall(self._NO_OP, [])]
-            else:
-                x = self.barracks_positions[self.barracks_build]["x"]
-                y = self.barracks_positions[self.barracks_build]["y"]
-
-                point = self.__get_harvesting_worker(env)
-                if point == None:
-                    func = [actions.FunctionCall(self._NO_OP, [])]
-                else:
-                    func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(self._BUILD_BARRACKS, [self._NOT_QUEUED, [x, y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
-                    self.barracks_build += 1
+            self.barracks_build, func = self.__build_with_random_worker(env=env, 
+                                                                minerals_limit=150,
+                                                                max_number=self.maxBarracks, 
+                                                                current_built=self.barracks_build, 
+                                                                building_positions=self.barracks_positions, 
+                                                                build_action_type=self._BUILD_BARRACKS, 
+                                                                build_type=self._TERRAN_BARRACKS, 
+                                                                other_build_type=self._TERRAN_SUPLY_DEPOT)
 
         # create worker
         elif self.possible_actions[action] == self._CREATE_WORKER:
@@ -342,6 +336,82 @@ class BuildMarines(AbstractBase):
             return [actions.FunctionCall(self._NO_OP, [])]
         else:
             return action
+
+    '''
+        (Private method)
+        Build specify building with idle worker if it is possible. 
+        Return current number of that kind of building and action function
+    '''
+    def __build_with_idle_worker(self, env, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
+        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+
+        buildings_number = len(self.__get_group(env, build_type)) + self.__get_buildings_building(env, build_type)
+        if current_built >= max_number and buildings_number < max_number:
+            lost_buildings = self.__get_group(env, build_type)
+            positions = building_positions.copy()
+            for building in lost_buildings:
+                for pos in building_positions:
+                    x = building.x
+                    y = building.y
+                    if (building.x >= pos['x'] - 1.5 and building.x <= pos['x'] + 1.5) and (building.y >= pos['y'] - 1.5 and building.y <= pos['y'] + 1.5):
+                        positions.remove(pos)
+                        break
+
+            func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(build_action_type, [self._NOT_QUEUED, [positions[0]['x'], positions[0]['y']]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+
+        elif current_built >= max_number or env.observation.player.idle_worker_count <= 0 or env.observation.player.minerals < minerals_limit or (other_build_type != None and self.__get_number_of_built_building(env, other_build_type) <= 0):
+            func = [actions.FunctionCall(self._NO_OP, [])]
+
+        else:
+            x = building_positions[current_built]["x"]
+            y = building_positions[current_built]["y"]
+
+            func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(build_action_type, [self._NOT_QUEUED, [x, y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+            current_built += 1
+        
+        return current_built, func
+
+    '''
+        (Private method)
+        Build specify building with random worker if it is possible. 
+        Return current number of that kind of building and action function
+    '''
+    def __build_with_random_worker(self, env, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
+        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+
+        buildings_number = len(self.__get_group(env, build_type)) + self.__get_buildings_building(env, build_type)
+        if current_built >= max_number and buildings_number < max_number:
+            lost_building = self.__get_group(env, build_type)
+            positions = building_positions.copy()
+            for building in lost_building:
+                for pos in building_positions:
+                    x = building.x
+                    y = building.y
+                    if (building.x >= pos['x'] - 1.5 and building.x <= pos['x'] + 1.5) and (building.y >= pos['y'] - 1.5 and building.y <= pos['y'] + 1.5):
+                        positions.remove(pos)
+                        break
+
+            point = self.__get_harvesting_worker(env)
+            if point == None:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+            else:
+                func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(build_action_type, [self._NOT_QUEUED, [positions[0]['x'], positions[0]['y']]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]          
+
+        elif current_built >= max_number or env.observation.player.minerals < minerals_limit or (other_build_type != None and self.__get_number_of_built_building(env, other_build_type) <= 0):
+            func = [actions.FunctionCall(self._NO_OP, [])]
+
+        else:
+            x = building_positions[current_built]["x"]
+            y = building_positions[current_built]["y"]
+
+            point = self.__get_harvesting_worker(env)
+            if point == None:
+                func = [actions.FunctionCall(self._NO_OP, [])]
+            else:
+                func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(build_action_type, [self._NOT_QUEUED, [x, y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
+                current_built += 1
+
+        return current_built, func
 
     '''
         (Private method)

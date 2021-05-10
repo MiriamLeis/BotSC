@@ -45,7 +45,5 @@ def learn(environment, agent, filepath, saves_filepath, episodes, episodes_for_s
                 actualTime += deltaTime
             
             env = agent.step(env=env,environment=environment)
-
-        environment.save(saves_filepath + 'grabacion_'+str(episode) )
     
     agent.save(filepath)

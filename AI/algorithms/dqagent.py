@@ -157,8 +157,7 @@ class DQAgent(AbstractAgent):
         This action could be random or the one with maxium reward, depending on epsilon value.
     '''
     def choose_action(self, env):
-        if True:
-        #if np.random.rand() > self.epsilon:
+        if np.random.rand() > self.epsilon:
             self.action = np.random.choice(self.actions)
             self.agent.get_action(env=env, action=self.action)
         else:
@@ -224,5 +223,4 @@ class DQAgent(AbstractAgent):
         Update epsilon value
     '''
     def __set_epsilon(self, episode):
-        #self.epsilon=1
         self.epsilon = (episode / (self.total_episodes - (self.total_episodes / 2)))

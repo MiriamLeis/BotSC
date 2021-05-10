@@ -31,6 +31,3 @@ class PySC2(Environment):
         obs = self.env.step(actions=actions)
         return obs[0]
 
-    def save(self, filepath):
-        self.env.save_replay(filepath)
-
