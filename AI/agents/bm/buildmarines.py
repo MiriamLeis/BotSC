@@ -110,7 +110,7 @@ class BuildMarines(AbstractBase):
     def get_info(self):
         return {
             'actions' : self.possible_actions, 
-             'num_states' : 227,
+             'num_states' : 20,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,
              'learn_every' : 20,
@@ -119,8 +119,8 @@ class BuildMarines(AbstractBase):
              'update_time' : 5,
              'max_cases' : 1024,
              'cases_to_delete' : 128,
-             'hidden_nodes' : 300,
-             'hidden_layer' : 10}
+             'hidden_nodes' : 150,
+             'hidden_layer' : 2}
 
     '''
         Prepare basic parameters.
@@ -162,73 +162,83 @@ class BuildMarines(AbstractBase):
 
     '''
         Return agent state
-        [PERCENTAGE IDLE WORKERS,
-        PERCENTAGE FOOD,
-        PERCENTAGE MINERALS,
+        [IDLE WORKERS,
+        FOOD,
+        MINERALS,
         TRAINING WORKER,
-        WORKER 1 HARVESTING, ..., WORKER 16 HARVESTING, 
-        HOUSE 1 BUILD, ..., HOUSE 16 BUILD, 
-        BARRACK 1 BUILD, ..., BARRACK 8 BUILD, 
-        BARRACK 1 USED, ... , BARRACK 8 USED, 
-        HOUSE 1 BUILDING, ... , HOUSE 8 BUILDING, 
-        BARRACKS 1 BUILDING, ... , BARRACKS 8 BUILDING, 
-        MARINE 1 CREATED, ..., MARINE 159 CREATED]
+        WORKERS HARVESTING, 
+        HOUSE BUILD, 
+        BARRACKS AVAILABLE ... 8, 
+        HOUSE BUILDING, 
+        BARRACKS BUILDING,
+        HOUSE AVAILABLE,
+        BARRACKS AVAILABLE,
+        MARINE AVAILABLE,
+        MARINE BUILDING
+        ]
     '''
     def get_state(self, env):
-        state = [0, 0, 0, 0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0]
+        state = [0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0, 0, 0, 0, 0, 0, 0]
 
-        if self.cont_steps < self.ignored_steps: 
-            state += [0] * self.marines_max
+        if self.cont_steps < self.ignored_steps:
             return state
 
-        if len(self.__get_group(env, self._TERRAN_SCV)) - 12 > 0:
-            state[0] = round(env.observation.player.idle_worker_count / (len(self.__get_group(env, self._TERRAN_SCV)) - 12), 2)
-        else:
-            state[0] = 0
+        
+        state[0] = env.observation.player.idle_worker_count / 10
 
         remaining_food = env.observation.player.food_cap - env.observation.player.food_used
-        if remaining_food > 10:
-            state[1] = 1
-        elif remaining_food > 0:
-            state[1] = 0.5
-        else:
-            state[1] = 0
+        
+        state[1] = remaining_food/10
 
-        percentageMinerals = env.observation.player.minerals / 2000
-        if percentageMinerals > 1:
-            state[2] = 1
-        else:
-            state[2] = round(percentageMinerals, 2)
+
+        state[2] = env.observation.player.minerals / 1000
 
         if self.__get_group(env, self._TERRAN_COMMANDCENTER)[0].order_progress_0 > 0:
             state[3] = 1
         else:
             state[3] = 0
 
+        state[4] = self.__get_workers_harvesting(env)/10
+
+        if self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
+            state[5] = 1
+        else:
+            state[5] = 0
+   
+        #barracones disponibles
+        for i in range(6, 6 + self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) - self.__get_barracks_used(env)):
+            state[i] = 1
+
+        if self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
+            state[14] = 1
+        else:
+            state[14] = 0
+            
+        if self.__get_buildings_building(env, self._TERRAN_BARRACKS) > 0:
+            state[15] = 1
+        else:
+            state[15] = 0
+
+        if self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) < 16 and env.observation.player.minerals >= 100:
+            state[16] = 1
+        else:
+            state[16] = 0
+
+        if self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) < 8 and env.observation.player.minerals >= 150 and self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
+            state[17] = 1
+        else:
+            state[17] = 0
+
+        if self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) - self.__get_barracks_used(env) > 0 and env.observation.player.minerals >= 50 and remaining_food > 0:
+            state[18] = 1
+        else:
+            state[18] = 0         
+
+        if self.__get_barracks_used(env) > 0:
+            state[19] = 1
+        else:
+            state[19] = 0      
         
-        for i in range(4, 4 + self.__get_workers_harvesting(env)):
-            state[i] = 1
-
-        for i in range(20, 20 + self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT)):
-            state[i] = 1
-        
-        for i in range(36, 36 + self.__get_number_of_built_building(env, self._TERRAN_BARRACKS)):
-            state[i] = 1
-
-        for i in range(44, 44 + self.__get_barracks_used(env)):
-            state[i] = 1
-
-        for i in range(52, 52 + self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT)):
-            state[i] = 1
-
-        for i in range(60, 60 + self.__get_buildings_building(env, self._TERRAN_BARRACKS)):
-            state[i] = 1
-        
-        marines = len(self.__get_group(env, self._TERRAN_MARINE))
-        marines_built = [1] * marines
-        marines_built += [0] * (self.marines_max - marines)
-
-        state += marines_built
 
         return state
 
@@ -327,8 +337,8 @@ class BuildMarines(AbstractBase):
     def get_reward(self, env, action):
         reward = 0
         if len(self.__get_group(env, self._TERRAN_MARINE)) > self.actualMarines:
-            reward = self.actualMarines
-            #reward = len(self.__get_group(env, self._TERRAN_MARINE)) - self.actualMarines
+            #reward = self.actualMarines
+            reward = len(self.__get_group(env, self._TERRAN_MARINE)) - self.actualMarines
             self.actualMarines = len(self.__get_group(env, self._TERRAN_MARINE))
 
 
