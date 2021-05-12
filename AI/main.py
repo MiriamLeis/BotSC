@@ -13,7 +13,7 @@ from smart import smart
 from absl import flags
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer('episodes', 20, 'Number of episodes.', lower_bound=0)
+flags.DEFINE_integer('episodes', 40, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 14250, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 2, 'Episodes until backup save.', lower_bound=0)
 flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lower_bound=0.0)

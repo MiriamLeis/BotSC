@@ -97,6 +97,8 @@ class BuildMarines(AbstractBase):
                 {'x': 60.5 - 56, 'y': 5}
         ]
 
+        self.marines_max = 159
+
     def get_args(self):
         super().get_args()
 
@@ -108,7 +110,7 @@ class BuildMarines(AbstractBase):
     def get_info(self):
         return {
             'actions' : self.possible_actions, 
-             'num_states' : 68,
+             'num_states' : 227,
              'discount' : 0.99,
              'replay_mem_size' : 50_000,
              'learn_every' : 20,
@@ -117,8 +119,8 @@ class BuildMarines(AbstractBase):
              'update_time' : 5,
              'max_cases' : 1024,
              'cases_to_delete' : 128,
-             'hidden_nodes' : 100,
-             'hidden_layer' : 2}
+             'hidden_nodes' : 300,
+             'hidden_layer' : 10}
 
     '''
         Prepare basic parameters.
@@ -169,20 +171,28 @@ class BuildMarines(AbstractBase):
         BARRACK 1 BUILD, ..., BARRACK 8 BUILD, 
         BARRACK 1 USED, ... , BARRACK 8 USED, 
         HOUSE 1 BUILDING, ... , HOUSE 8 BUILDING, 
-        BARRACKS 1 BUILDING, ... , BARRACKS 8 BUILDING, ]
+        BARRACKS 1 BUILDING, ... , BARRACKS 8 BUILDING, 
+        MARINE 1 CREATED, ..., MARINE 159 CREATED]
     '''
     def get_state(self, env):
         state = [0, 0, 0, 0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0]
 
-        if self.cont_steps < self.ignored_steps: return state
+        if self.cont_steps < self.ignored_steps: 
+            state += [0] * self.marines_max
+            return state
 
         if len(self.__get_group(env, self._TERRAN_SCV)) - 12 > 0:
             state[0] = round(env.observation.player.idle_worker_count / (len(self.__get_group(env, self._TERRAN_SCV)) - 12), 2)
         else:
             state[0] = 0
 
-        percentageFood = env.observation.player.food_used / env.observation.player.food_cap
-        state[1] = round(percentageFood, 2)
+        remaining_food = env.observation.player.food_cap - env.observation.player.food_used
+        if remaining_food > 10:
+            state[1] = 1
+        elif remaining_food > 0:
+            state[1] = 0.5
+        else:
+            state[1] = 0
 
         percentageMinerals = env.observation.player.minerals / 2000
         if percentageMinerals > 1:
@@ -213,7 +223,13 @@ class BuildMarines(AbstractBase):
 
         for i in range(60, 60 + self.__get_buildings_building(env, self._TERRAN_BARRACKS)):
             state[i] = 1
-            
+        
+        marines = len(self.__get_group(env, self._TERRAN_MARINE))
+        marines_built = [1] * marines
+        marines_built += [0] * (self.marines_max - marines)
+
+        state += marines_built
+
         return state
 
 
