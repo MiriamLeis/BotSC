@@ -205,7 +205,7 @@ class BuildMarines(AbstractBase):
         else:
             state[5] = 0
    
-        #barracones disponibles
+        #enabled barracks
         for i in range(6, 6 + self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) - self.__get_barracks_used(env)):
             state[i] = 1
 
@@ -219,12 +219,12 @@ class BuildMarines(AbstractBase):
         else:
             state[15] = 0
 
-        if self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) < 16 and env.observation.player.minerals >= 100:
+        if (self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) + self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT)) < 16 and env.observation.player.minerals >= 100:
             state[16] = 1
         else:
             state[16] = 0
 
-        if self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) < 8 and env.observation.player.minerals >= 150 and self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
+        if (self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) + self.__get_buildings_building(env, self._TERRAN_BARRACKS)) < 8 and env.observation.player.minerals >= 150 and self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
             state[17] = 1
         else:
             state[17] = 0

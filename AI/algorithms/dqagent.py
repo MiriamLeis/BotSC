@@ -157,7 +157,8 @@ class DQAgent(AbstractAgent):
         This action could be random or the one with maxium reward, depending on epsilon value.
     '''
     def choose_action(self, env):
-        if np.random.rand() > self.epsilon:
+        if np.random.rand() > 0.85:
+        #if np.random.rand() > self.epsilon:
             self.action = np.random.choice(self.actions)
             self.agent.get_action(env=env, action=self.action)
         else:
