@@ -10,6 +10,8 @@ class Environment:
         return
     def prepare(self):
         return
+    def switch(self):
+        return
     def update(self, deltaTime):
         return
     def get_environment(self):

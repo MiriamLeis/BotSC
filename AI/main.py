@@ -11,16 +11,19 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('episodes', 40, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 2000, 'Steps from each episode.', lower_bound=0)
+flags.DEFINE_integer('number_agents', 2, 'Number of agents.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 2, 'Episodes until backup save.', lower_bound=0)
 flags.DEFINE_float('time_for_action', 0.2, 'Time until choose new action.', lower_bound=0.0)
 flags.DEFINE_boolean('learn', True, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
-flags.DEFINE_string('filename', 'bm', 'Filename for load or save.')
+flags.DEFINE_list('filename', 'bm', 'List of filename for load or save.')
 
 FLAGS(sys.argv)
 
-FILEPATH_SAVES = '\\saves_episode\\' + FLAGS.filename + '\\'
+FILEPATH_SAVES = [None] * len(FLAGS.filename)
+for i in range(len(FLAGS.filename)):
+    FILEPATH_SAVES[i] = '\\saves_episode\\' + FLAGS.filename[i] + '\\'
 
 def main():
     #---------- INIT -----------#
@@ -29,21 +32,30 @@ def main():
     if not os.path.exists(os.getcwd() + FLAGS.filepath):
         os.makedirs(os.getcwd() + FLAGS.filepath)
     # create backup save filepath directories if they dont exist
-    if not os.path.exists(os.getcwd() + FILEPATH_SAVES):
-        os.makedirs(os.getcwd() + FILEPATH_SAVES)
+    for i in range(len(FILEPATH_SAVES)):
+        if not os.path.exists(os.getcwd() + FILEPATH_SAVES[i]):
+            os.makedirs(os.getcwd() + FILEPATH_SAVES[i])
 
     # initialize environment
     env = DQBuildMarines()
 
-    # initialize agent
-    info = env.get_info()
-    info['learn'] = FLAGS.learn
-    info['episodes'] = FLAGS.episodes
-
-    agent = DQAgent(info=info)
+    # initialize agents
+    agents = [None] * FLAGS.number_agents
+    for i in range(FLAGS.number_agents):
+        info = env.get_info()
+        info['learn'] = FLAGS.learn
+        info['episodes'] = FLAGS.episodes
+        
+        agents[i] = DQAgent(info=info)
+        
+        env.switch()
 
     if FLAGS.load or not FLAGS.learn:
-        agent.load(filepath=FLAGS.filepath + FLAGS.filename)
+        i = 0
+        for agent in agents:
+            agent.load(filepath=FLAGS.filepath + FLAGS.filename[i])
+            env.switch()
+            i += 1
     
     #---------- LOOP -----------#
 
@@ -60,12 +72,17 @@ def main():
 
             # backup save
             if ep >= FLAGS.episodes_for_save:
-                agent.save(filepath=FILEPATH_SAVES + str(episode))
+                for agent in agents:
+                    agent.save(filepath=FILEPATH_SAVES + str(episode))
+                    env.switch()
                 ep = 0
             ep += 1
 
         env.prepare()
-        agent.prepare(env=env, episode=episode-1)
+
+        for agent in agents:
+            agent.prepare(env=env, episode=episode-1)
+            env.switch()
 
         actualTime = sys.maxsize
         lastTime = 0.0
@@ -82,13 +99,20 @@ def main():
 
             # time to choose new action
             if actualTime >= FLAGS.time_for_action:
-                agent.update(env=env, deltaTime=deltaTime)
+                for agent in agents:
+                    agent.update(env=env, deltaTime=deltaTime)
+                    env.switch()
+
                 actualTime = 0.0
             else:
                 actualTime += deltaTime
             
             env.step()
     
-    agent.save(filepath=FLAGS.filepath + FLAGS.filename)
+    i = 0
+    for agent in agents:
+        agent.save(filepath=FLAGS.filepath + FLAGS.filename[i])
+        env.switch()
+        i += 1
 
 main()
