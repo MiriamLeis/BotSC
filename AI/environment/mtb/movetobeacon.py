@@ -3,9 +3,9 @@ import math
 
 from pysc2.lib import actions, features
 
-from agents.abstract_base import AbstractBase
+from environment.pysc2_env import PySC2 # environment
 
-class MoveToBeacon(AbstractBase): 
+class MoveToBeacon(PySC2): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
     _PLAYER_NEUTRAL = 3
@@ -41,50 +41,42 @@ class MoveToBeacon(AbstractBase):
     ]
 
     def __init__(self):
-        super().__init__()
-    
-    '''
-        Return map information.
-    '''
-    def get_args(self):
-        super().get_args()
-
-        return ['MoveToBeacon']
+        super().__init__(args=['MoveToBeacon'])
 
     '''
         Prepare basic parameters.
     '''
-    def prepare(self, env):
-        super().prepare(env=env)
+    def prepare(self):
+        super().prepare()
 
-        beacon_new_pos = self._get_unit_pos(env=env,view=self._PLAYER_NEUTRAL)
+        beacon_new_pos = self._get_unit_pos(view=self._PLAYER_NEUTRAL)
         self.beacon_actual_pos = [beacon_new_pos[0], beacon_new_pos[1]]
 
-        self.oldDist = self._get_dist(env)
+        self.oldDist = self._get_dist()
 
         self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
     '''
         Update basic values and train
     '''
-    def update(self, env, deltaTime):
-        super().update(env=env, deltaTime=deltaTime)
+    def update(self, deltaTime):
+        super().update(deltaTime=deltaTime)
 
-        self.oldDist = self._get_dist(env)
+        self.oldDist = self._get_dist()
 
     '''
         Do step of the environment
     '''
-    def step(self, env, environment):
-        self._check_action_available(env=env)
-        env = environment.step(actions=[self.action])
-        return env
+    def step(self):
+        self._check_action_available()
+        obs = self.env.step(actions=[self.action])
+        self.obs = obs[0]
 
     '''
         Return action of environment
     '''
-    def get_action(self, env, action):
-        marinex, mariney = self._get_unit_pos(env=env, view=self._PLAYER_SELF)
+    def get_action(self, action):
+        marinex, mariney = self._get_unit_pos(view=self._PLAYER_SELF)
         func = actions.FunctionCall(self._NO_OP, [])
 
         if  self.possible_actions[action] == self._MOVE_UP:
@@ -141,8 +133,8 @@ class MoveToBeacon(AbstractBase):
     '''
         Return reward
     '''
-    def get_reward(self, env, action):
-        beacon_new_pos = self._get_unit_pos(env=env, view=self._PLAYER_NEUTRAL)
+    def get_reward(self, action):
+        beacon_new_pos = self._get_unit_pos(view=self._PLAYER_NEUTRAL)
 
         if self.beacon_actual_pos[0] != round(beacon_new_pos[0],1) or self.beacon_actual_pos[1] != round(beacon_new_pos[1],1):
             self.beacon_actual_pos = [round(beacon_new_pos[0],1), round(beacon_new_pos[1],1)]
@@ -156,23 +148,23 @@ class MoveToBeacon(AbstractBase):
     '''
         Return True if we must end this episode
     '''
-    def get_end(self, env):
+    def get_end(self):
         return False
 
     '''
         (Protected method)
         Check if current action is available. If not, use default action
     '''
-    def _check_action_available(self, env):
-        if not (self._MOVE_SCREEN in env.observation.available_actions):
+    def _check_action_available(self):
+        if not (self._MOVE_SCREEN in self.get_obs().observation.available_actions):
             self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
     '''
         (Protected method)
         Return unit position
     '''
-    def _get_unit_pos(self, env, view):
-        ai_view = env.observation['feature_screen'][self._PLAYER_RELATIVE]
+    def _get_unit_pos(self, view):
+        ai_view = self.get_obs().observation['feature_screen'][self._PLAYER_RELATIVE]
         unitys, unitxs = (ai_view == view).nonzero()
         if len(unitxs) == 0:
             unitxs = np.array([0])
@@ -207,9 +199,9 @@ class MoveToBeacon(AbstractBase):
         (Protected method)
         Return dist from marine and beacon position
     '''
-    def _get_dist(self, env):
-        marinex, mariney = self._get_unit_pos(env, self._PLAYER_SELF)
-        beaconx, beacony = self._get_unit_pos(env, self._PLAYER_NEUTRAL)
+    def _get_dist(self):
+        marinex, mariney = self._get_unit_pos(view=self._PLAYER_SELF)
+        beaconx, beacony = self._get_unit_pos(view=self._PLAYER_NEUTRAL)
 
         newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
         return newDist

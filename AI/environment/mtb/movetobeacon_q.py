@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from agents.mtb.movetobeacon import MoveToBeacon
+from environment.mtb.movetobeacon import MoveToBeacon
 
 class QMoveToBeacon(MoveToBeacon):
     def __init__(self):
@@ -19,10 +19,10 @@ class QMoveToBeacon(MoveToBeacon):
     '''
         Return agent state
     '''
-    def get_state(self, env):
+    def get_state(self):
         state = -1
-        marinex, mariney = super()._get_unit_pos(env=env, view=self._PLAYER_SELF)
-        beaconx, beacony = super()._get_unit_pos(env=env, view=self._PLAYER_NEUTRAL)
+        marinex, mariney = super()._get_unit_pos(view=self._PLAYER_SELF)
+        beaconx, beacony = super()._get_unit_pos(view=self._PLAYER_NEUTRAL)
 
         direction = [beaconx - marinex, beacony - mariney]
         dist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))

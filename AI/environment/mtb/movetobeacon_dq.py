@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from agents.mtb.movetobeacon import MoveToBeacon
+from environment.mtb.movetobeacon import MoveToBeacon
 
 class DQMoveToBeacon(MoveToBeacon): 
     def __init__(self):
@@ -27,10 +27,10 @@ class DQMoveToBeacon(MoveToBeacon):
     '''
         Return agent state
     '''
-    def get_state(self, env):
+    def get_state(self):
 
-        marinex, mariney = super()._get_unit_pos(env=env, view=self._PLAYER_SELF)
-        beaconx, beacony = super()._get_unit_pos(env=env, view=self._PLAYER_NEUTRAL)
+        marinex, mariney = super()._get_unit_pos(view=self._PLAYER_SELF)
+        beaconx, beacony = super()._get_unit_pos(view=self._PLAYER_NEUTRAL)
 
         direction = [beaconx-marinex, beacony - mariney]
         np.linalg.norm(direction)
@@ -41,7 +41,7 @@ class DQMoveToBeacon(MoveToBeacon):
         if direction[0] > 0:
             angleD = 360 - angleD
 
-        dist = super()._get_dist(env=env)
+        dist = super()._get_dist()
         norm = 1 - ((dist - 4) / (55 - 5))
         norm = round(norm,1)
         state = [0,0,0,0,0,0,0,0]

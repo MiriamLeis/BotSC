@@ -9,14 +9,12 @@ from keras import Model
 from keras.layers import Dense, Input
 from collections import deque
 
-from algorithms.abstract_agent import AbstractAgent
+from agents.abstract_agent import AbstractAgent
 
 class DQAgent(AbstractAgent):
-    def __init__(self, agent, total_episodes):
-        super().__init__()
-        self.agent = agent
-        
-        info = self.agent.get_info()
+    def __init__(self, info):
+        self.learning = info['learn']
+        self.total_episodes = info['episodes']
 
         self.actions = info['actions']
         self.discount = info['discount']
@@ -27,7 +25,6 @@ class DQAgent(AbstractAgent):
         self.update_time = info['update_time']
         self.max_cases = info['max_cases']
         self.cases_to_delete = info['cases_to_delete']
-        self.total_episodes = total_episodes
 
         # main model
         # model that we are not fitting every step
@@ -43,53 +40,52 @@ class DQAgent(AbstractAgent):
         self.target_update_counter = 0
 
     '''
-        Return basic information
-    '''
-    def get_args(self):
-        return self.agent.get_args()
-
-    '''
         Prepare agent for next episode
     '''
-    def prepare(self, env, ep):
-        self.__set_epsilon(episode=ep)
-        self.action = self.agent.prepare(env)
-        self.current_state = self.agent.get_state(env)
-
-    '''
-        Return if episode must end
-    '''
-    def get_end(self, env):
-        return self.agent.get_end(env)
+    def prepare(self, env, episode):
+        self.__set_epsilon(episode=episode)
+        self.action = 0
+        self.current_state = env.get_state()
 
     '''
         Update basic values
     '''
     def update(self, env, deltaTime):
-        self.new_state = self.agent.get_state(env)
-        self.reward = self.agent.get_reward(env, self.action)
+        self.new_state = env.get_state()
+        self.reward = env.get_reward(action=self.action)
+        env.update(deltaTime=deltaTime)
 
-        #print("Recompensa : ", self.reward)
-        #print("Accion : ", self.action)
-        #print("Estado : ", self.current_state)
-        #print("Nuevo Estado: ", self.new_state)
-        #print("---")
-        self.agent.update(env, deltaTime)
-        
-    '''
-        Update basic values
-    '''
-    def late_update(self, env, deltaTime):
+        # train
+        if self.learning:
+            self._train()
+
+        # late update
         self.current_state = self.new_state
 
+        # get action
+        if self.learning:
+            self._choose_action(env=env)
+        else:
+            self._get_max_action(env=env)
+        
     '''
-        Do step of the environment
-        Return PySC2 environment obs
-    '''
-    def step(self, env, environment):
-        return self.agent.step(env=env,environment=environment)
+        Save models to specify file
+    '''              
+    def save(self, filepath):
+        keras.models.save_model(self.model, os.getcwd() + filepath + '.h5')
 
-    def train(self):
+    '''
+        Load models from specify file
+    '''        
+    def load(self, filepath):
+        self.model = keras.models.load_model(os.getcwd() + filepath + '.h5')
+        self.target_model = keras.models.load_model(os.getcwd() + filepath + '.h5')
+
+    '''
+        (Protected method)
+        Execute Deep Q-Learning algorithm
+    '''
+    def _train(self):
         self.__update_replay_memory(transition=(self.current_state, self.action, self.reward, self.new_state))
 
         if len(self.replay_memory) < self.min_rep_mem_total:
@@ -142,46 +138,30 @@ class DQAgent(AbstractAgent):
             self.target_update_counter = 0
 
     '''
+        (Protected method)
         Return action with maxium reward
     '''
-    def get_max_action(self, env):
+    def _get_max_action(self, env):
         cases = self.__get_qs(self.current_state)
         self.action = np.argmax(cases)
-        self.agent.get_action(env=env, action=self.action)
+        env.get_action(action=self.action)
+        
         print("Estado: ", self.current_state)
         print("Casos: ", cases)
         print("---")
 
     '''
+        (Protected method)
         Choose action for current state.
         This action could be random or the one with maxium reward, depending on epsilon value.
     '''
-    def choose_action(self, env):
-        if np.random.rand() > 0.85:
-        #if np.random.rand() > self.epsilon:
+    def _choose_action(self, env):
+        #if np.random.rand() > 0.85:
+        if np.random.rand() > self.epsilon:
             self.action = np.random.choice(self.actions)
-            self.agent.get_action(env=env, action=self.action)
+            env.get_action(action=self.action)
         else:
-            self.get_max_action(env=env)
-    
-    '''
-        Return internal agent
-    '''
-    def get_agent(self):
-        return self.agent
-        
-    '''
-        Save models to specify file
-    '''              
-    def save(self, filepath):
-        keras.models.save_model(self.model, os.getcwd() + filepath + '.h5')
-
-    '''
-        Load models from specify file
-    '''        
-    def load(self, filepath):
-        self.model = keras.models.load_model(os.getcwd() + filepath + '.h5')
-        self.target_model = keras.models.load_model(os.getcwd() + filepath + '.h5')
+            self._get_max_action(env=env)
     
     '''
         (Private method)
