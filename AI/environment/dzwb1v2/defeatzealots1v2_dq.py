@@ -5,7 +5,7 @@ from environment.dzwb.defeatzealots import DefeatZealots
 
 class DQDefeatZealots1v2(DefeatZealots): 
     def __init__(self):
-        super().__init__()
+        super().__init__(args=['DefeatZealotswithBlink_2enemies'])
         
     '''
         Return map information.

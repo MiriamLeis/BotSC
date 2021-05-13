@@ -3,7 +3,7 @@ import os
 
 from tqdm import tqdm
 
-from environment.dzwb.defeatzealots_dq import DQDefeatZealots # environment
+from environment.dzwb1v2.defeatzealots1v2_dq import DQDefeatZealots1v2 # environment
 from agents.dqagent import DQAgent # algorithm agent
 
 from absl import flags
@@ -16,7 +16,7 @@ flags.DEFINE_float('time_for_action', 0.2, 'Time until choose new action.', lowe
 flags.DEFINE_boolean('learn', False, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
-flags.DEFINE_string('filename', 'dzwb', 'Filename for load or save.')
+flags.DEFINE_string('filename', 'dzwb1v2', 'Filename for load or save.')
 
 FLAGS(sys.argv)
 
@@ -33,7 +33,7 @@ def main():
         os.makedirs(os.getcwd() + FILEPATH_SAVES)
 
     # initialize environment
-    env = DQDefeatZealots()
+    env = DQDefeatZealots1v2()
 
     # initialize agent
     info = env.get_info()

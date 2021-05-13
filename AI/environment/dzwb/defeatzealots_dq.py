@@ -5,7 +5,7 @@ from environment.dzwb.defeatzealots import DefeatZealots
 
 class DQDefeatZealots(DefeatZealots): 
     def __init__(self):
-        super().__init__()
+        super().__init__(args=['DefeatZealotswithBlink'])
 
     '''
         Return basic information for Deep Q-Learning.

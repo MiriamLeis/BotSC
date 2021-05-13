@@ -52,8 +52,8 @@ class DefeatZealots(PySC2):
     UNIT_ALLY = units.Protoss.Stalker
     UNIT_ENEMY = units.Protoss.Zealot
 
-    def __init__(self):
-        super().__init__(args=['DefeatZealotswithBlink'])
+    def __init__(self,args):
+        super().__init__(args=args)
 
     '''
         Prepare basic parameters. This is called before start the episode.
