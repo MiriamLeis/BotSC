@@ -3,8 +3,8 @@ import os
 
 from tqdm import tqdm
 
-from environment.mtb.movetobeacon_q import QMoveToBeacon # environment
-from agents.qagent import QAgent # algorithm agent
+from environment.dzwb.defeatzealots_dq import DQDefeatZealots # environment
+from agents.dqagent import DQAgent # algorithm agent
 
 from absl import flags
 FLAGS = flags.FLAGS
@@ -13,10 +13,10 @@ flags.DEFINE_integer('episodes', 40, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 2000, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 2, 'Episodes until backup save.', lower_bound=0)
 flags.DEFINE_float('time_for_action', 0.2, 'Time until choose new action.', lower_bound=0.0)
-flags.DEFINE_boolean('learn', True, 'Agent will learn.')
+flags.DEFINE_boolean('learn', False, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
-flags.DEFINE_string('filename', 'mtb', 'Filename for load or save.')
+flags.DEFINE_string('filename', 'dzwb', 'Filename for load or save.')
 
 FLAGS(sys.argv)
 
@@ -33,14 +33,14 @@ def main():
         os.makedirs(os.getcwd() + FILEPATH_SAVES)
 
     # initialize environment
-    env = QMoveToBeacon()
+    env = DQDefeatZealots()
 
     # initialize agent
     info = env.get_info()
     info['learn'] = FLAGS.learn
     info['episodes'] = FLAGS.episodes
 
-    agent = QAgent(info=info)
+    agent = DQAgent(info=info)
 
     if FLAGS.load or not FLAGS.learn:
         agent.load(filepath=FLAGS.filepath + FLAGS.filename)

@@ -33,7 +33,7 @@ class QAgent(AbstractAgent):
 
         # train
         if self.learning:
-            self._train()
+            self.train()
 
         # late update
         self.current_state = self.new_state
@@ -43,6 +43,22 @@ class QAgent(AbstractAgent):
             self._choose_action(env=env)
         else:
             self._get_max_action(env=env)
+    
+    '''
+        Execute Q-Learning algorithm
+    '''
+    def train(self):
+        self.__check_state_exist(self.new_state)
+        self.__check_state_exist(self.current_state)
+
+        state_idx = list(self.states_list).index(self.current_state)
+        next_state_idx = list(self.states_list).index(self.new_state)
+
+        q_predict = self.q_table[state_idx, self.action]
+
+        q_target = self.reward + (self.gamma * self.q_table[next_state_idx].max())
+
+        self.q_table[state_idx, self.action] = ((1 - self.lr) * q_predict) + (self.lr * (q_target))
         
     '''
         Save Q-Table and States to specify file
@@ -64,23 +80,6 @@ class QAgent(AbstractAgent):
         tmp_array = np.load(os.getcwd() + filepath + '_states.npy')
         for x in tmp_array:
             self.states_list.add(x)
-    
-    '''
-        (Protected method)
-        Execute Q-Learning algorithm
-    '''
-    def _train(self):
-        self.__check_state_exist(self.new_state)
-        self.__check_state_exist(self.current_state)
-
-        state_idx = list(self.states_list).index(self.current_state)
-        next_state_idx = list(self.states_list).index(self.new_state)
-
-        q_predict = self.q_table[state_idx, self.action]
-
-        q_target = self.reward + (self.gamma * self.q_table[next_state_idx].max())
-
-        self.q_table[state_idx, self.action] = ((1 - self.lr) * q_predict) + (self.lr * (q_target))
 
     '''
         (Protected method)

@@ -3,9 +3,9 @@ import math
 
 from pysc2.lib import actions, features, units
 
-from agents.abstract_base import AbstractBase
+from environment.pysc2_env import PySC2 # environment
 
-class DefeatZealots(AbstractBase): 
+class DefeatZealots(PySC2): 
     '''
         Useful variables 
     '''
@@ -53,27 +53,18 @@ class DefeatZealots(AbstractBase):
     UNIT_ENEMY = units.Protoss.Zealot
 
     def __init__(self):
-        super().__init__()
-    '''
-        Return map information.
-    '''
-    def get_args(self):
-        super().get_args()
-
-        return ['DefeatZealotswithBlink']
+        super().__init__(args=['DefeatZealotswithBlink'])
 
     '''
         Prepare basic parameters. This is called before start the episode.
     '''
-    def prepare(self, env):
-        super().prepare(env=env)
-
-        self.enemy_totalHP = self._get_group_totalHP(env, self.UNIT_ENEMY)
+    def prepare(self):
+        self.enemy_totalHP = self._get_group_totalHP(group_type=self.UNIT_ENEMY)
         self.enemy_originalHP = self.enemy_totalHP
-        self.enemy_onlyHP = self._get_group_totalHP(env, self.UNIT_ENEMY)
-        self.ally_totalHP = self._get_group_totalHP(env, self.UNIT_ALLY)
+        self.enemy_onlyHP = self._get_group_totalHP(group_type=self.UNIT_ENEMY)
+        self.ally_totalHP = self._get_group_totalHP(group_type=self.UNIT_ALLY)
         self.ally_originalHP = self.ally_totalHP
-        self.last_dist = self._get_dist(self._get_meangroup_position(env, self.UNIT_ALLY), self._get_meangroup_position(env, self.UNIT_ENEMY))
+        self.last_dist = self._get_dist(self._get_meangroup_position(group_type=self.UNIT_ALLY), self._get_meangroup_position(group_type=self.UNIT_ENEMY))
 
         self.last_can_shoot = False
         self.dead = False
@@ -83,36 +74,33 @@ class DefeatZealots(AbstractBase):
     '''
         Update values
     '''
-    def update(self, env, deltaTime):
-        super().update(env=env, deltaTime=deltaTime)
-
+    def update(self, deltaTime):
         self.last_can_shoot = self.current_can_shoot
-        return
         
     '''
         Do step of the environment
     '''
-    def step(self, env, environment):
-        self._check_action_available(env=env)
-        env = environment.step(actions=[self.action])
-        return env
+    def step(self):
+        self._check_action_available()
+        obs = self.env.step(actions=[self.action])
+        self.obs = obs[0]
 
     '''
         Return action of environment
     '''
-    def get_action(self, env, action):
+    def get_action(self, action):
         func = actions.FunctionCall(self._NO_OP, [])
 
         if self.possible_actions[action] == self._ATTACK:
             # ATTACK ACTION
-            if self._ATTACK_SCREEN in env.observation.available_actions:
-                zealot = self._get_zealot(env)
+            if self._ATTACK_SCREEN in self.obs.observation.available_actions:
+                zealot = self._get_zealot()
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         else:
             # MOVING ACTION
-            if self._MOVE_SCREEN in env.observation.available_actions:
-                stalkerx, stalkery = self._get_meangroup_position(env, self.UNIT_ALLY)
+            if self._MOVE_SCREEN in self.obs.observation.available_actions:
+                stalkerx, stalkery = self._get_meangroup_position(group_type=self.UNIT_ALLY)
 
                 if  self.possible_actions[action] == self._UP:
                     if(stalkery - self._MOVE_VAL < 3.5):
@@ -174,13 +162,13 @@ class DefeatZealots(AbstractBase):
     '''
         Return reward
     '''
-    def get_reward(self, env, action):
+    def get_reward(self, action):
         reward = 0
 
         # reward for attacking
-        actual_enemy_totalHP = self._get_group_totalHP(env, self.UNIT_ENEMY)
-        actual_ally_totalHP = self._get_group_totalHP(env, self.UNIT_ALLY)
-        actual_enemy_onlyHP = self._get_group_onlyHP(env, self.UNIT_ENEMY)
+        actual_enemy_totalHP = self._get_group_totalHP(group_type=self.UNIT_ENEMY)
+        actual_ally_totalHP = self._get_group_totalHP(group_type=self.UNIT_ALLY)
+        actual_enemy_onlyHP = self._get_group_onlyHP(group_type=self.UNIT_ENEMY)
 
         diff = (self.enemy_totalHP - actual_enemy_totalHP) - (self.ally_totalHP - actual_ally_totalHP)
 
@@ -202,8 +190,8 @@ class DefeatZealots(AbstractBase):
     '''
         Return True if we must end this episode
     '''
-    def get_end(self, env):
-        stalkers = self._get_group(env, self.UNIT_ALLY)
+    def get_end(self):
+        stalkers = self._get_group(group_type=self.UNIT_ALLY)
         self.dead = not stalkers
         return self.dead
 
@@ -211,21 +199,21 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return if current action is available in the environment
     '''
-    def _check_action_available(self, env):
+    def _check_action_available(self):
         if self.possible_actions[self.num_action] == self._ATTACK:
             # ATTACK ACTION
-            if not (self._ATTACK_SCREEN in env.observation.available_actions):
+            if not (self._ATTACK_SCREEN in self.obs.observation.available_actions):
                 self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
         else:
-            if not (self._MOVE_SCREEN in env.observation.available_actions):
+            if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
                 self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
     '''
         (Protected method)
         Return specified group
     '''
-    def _get_group(self, env, group_type):
-        group = [unit for unit in env.observation['feature_units'] 
+    def _get_group(self, group_type):
+        group = [unit for unit in self.obs.observation['feature_units'] 
                     if unit.unit_type == group_type]
         return group
 
@@ -233,8 +221,8 @@ class DefeatZealots(AbstractBase):
         (Protected method)
         Return zealot with lowest healt (health + shield)
     '''
-    def _get_zealot(self, env):
-        zealots = self._get_group(env, self.UNIT_ENEMY)
+    def _get_zealot(self):
+        zealots = self._get_group(group_type=self.UNIT_ENEMY)
 
         # search who has lower hp and lower shield
         target = zealots[0]
@@ -249,8 +237,8 @@ class DefeatZealots(AbstractBase):
         Return totalHP of a group = (unit health plus unit shield)
     '''
 
-    def _get_group_totalHP(self, env, group_type):
-        group = self._get_group(env, group_type)
+    def _get_group_totalHP(self, group_type):
+        group = self._get_group(group_type)
         totalHP = 0
         for unit in group:
             totalHP += unit.health + unit.shield
@@ -261,12 +249,46 @@ class DefeatZealots(AbstractBase):
         Return totalHP of a group = (unit health plus unit shield)
     '''
 
-    def _get_group_onlyHP(self, env, group_type):
-        group = self._get_group(env, group_type)
+    def _get_group_onlyHP(self, group_type):
+        group = self._get_group(group_type)
         totalHP = 0
         for unit in group:
             totalHP += unit.health
         return totalHP
+
+    '''
+        (Protected method)
+        Return mean position of a group
+    '''
+    def _get_meangroup_position(self, group_type):
+        group = self._get_group(group_type)
+
+        unitx = unity = 0
+        for unit in group:
+            unitx += unit.x
+            unity += unit.y
+        if len(group) < 0 or len(group) == 0:
+                       
+            unitx /= 1
+            unity /= 1
+
+        else:
+            unitx /= len(group)
+            unity /= len(group)
+        return unitx, unity
+
+    '''
+        (Protected method)
+        Return True if group cooldown == 0
+    '''
+    def _can_shoot(self, group_type):
+        group = self._get_group(group_type)
+
+        for unit in group:
+            if unit.weapon_cooldown != 0:
+                return False
+
+        return True
 
     '''
         (Protected method)
@@ -290,40 +312,6 @@ class DefeatZealots(AbstractBase):
 
 
         return ang_deg
-
-    '''
-        (Protected method)
-        Return mean position of a group
-    '''
-    def _get_meangroup_position(self, env, group_type):
-        group = self._get_group(env, group_type)
-
-        unitx = unity = 0
-        for unit in group:
-            unitx += unit.x
-            unity += unit.y
-        if len(group) < 0 or len(group) == 0:
-                       
-            unitx /= 1
-            unity /= 1
-
-        else:
-            unitx /= len(group)
-            unity /= len(group)
-        return unitx, unity
-
-    '''
-        (Protected method)
-        Return True if group cooldown == 0
-    '''
-    def _can_shoot(self, env, group_type):
-        group = self._get_group(env, group_type)
-
-        for unit in group:
-            if unit.weapon_cooldown != 0:
-                return False
-
-        return True
 
     '''
         (Protected method)

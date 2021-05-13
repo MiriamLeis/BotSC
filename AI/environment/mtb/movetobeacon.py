@@ -47,8 +47,6 @@ class MoveToBeacon(PySC2):
         Prepare basic parameters.
     '''
     def prepare(self):
-        super().prepare()
-
         beacon_new_pos = self._get_unit_pos(view=self._PLAYER_NEUTRAL)
         self.beacon_actual_pos = [beacon_new_pos[0], beacon_new_pos[1]]
 
@@ -60,8 +58,6 @@ class MoveToBeacon(PySC2):
         Update basic values and train
     '''
     def update(self, deltaTime):
-        super().update(deltaTime=deltaTime)
-
         self.oldDist = self._get_dist()
 
     '''
@@ -156,7 +152,7 @@ class MoveToBeacon(PySC2):
         Check if current action is available. If not, use default action
     '''
     def _check_action_available(self):
-        if not (self._MOVE_SCREEN in self.get_obs().observation.available_actions):
+        if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
             self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
 
     '''
@@ -164,7 +160,7 @@ class MoveToBeacon(PySC2):
         Return unit position
     '''
     def _get_unit_pos(self, view):
-        ai_view = self.get_obs().observation['feature_screen'][self._PLAYER_RELATIVE]
+        ai_view = self.obs.observation['feature_screen'][self._PLAYER_RELATIVE]
         unitys, unitxs = (ai_view == view).nonzero()
         if len(unitxs) == 0:
             unitxs = np.array([0])

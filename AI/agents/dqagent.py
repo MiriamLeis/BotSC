@@ -57,7 +57,7 @@ class DQAgent(AbstractAgent):
 
         # train
         if self.learning:
-            self._train()
+            self.train()
 
         # late update
         self.current_state = self.new_state
@@ -67,25 +67,11 @@ class DQAgent(AbstractAgent):
             self._choose_action(env=env)
         else:
             self._get_max_action(env=env)
-        
-    '''
-        Save models to specify file
-    '''              
-    def save(self, filepath):
-        keras.models.save_model(self.model, os.getcwd() + filepath + '.h5')
 
     '''
-        Load models from specify file
-    '''        
-    def load(self, filepath):
-        self.model = keras.models.load_model(os.getcwd() + filepath + '.h5')
-        self.target_model = keras.models.load_model(os.getcwd() + filepath + '.h5')
-
-    '''
-        (Protected method)
         Execute Deep Q-Learning algorithm
     '''
-    def _train(self):
+    def train(self):
         self.__update_replay_memory(transition=(self.current_state, self.action, self.reward, self.new_state))
 
         if len(self.replay_memory) < self.min_rep_mem_total:
@@ -136,6 +122,19 @@ class DQAgent(AbstractAgent):
         if self.target_update_counter > self.update_time:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
+        
+    '''
+        Save models to specify file
+    '''              
+    def save(self, filepath):
+        keras.models.save_model(self.model, os.getcwd() + filepath + '.h5')
+
+    '''
+        Load models from specify file
+    '''        
+    def load(self, filepath):
+        self.model = keras.models.load_model(os.getcwd() + filepath + '.h5')
+        self.target_model = keras.models.load_model(os.getcwd() + filepath + '.h5')
 
     '''
         (Protected method)

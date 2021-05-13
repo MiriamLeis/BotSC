@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from agents.dzwb.defeatzealots import DefeatZealots
+from environment.dzwb.defeatzealots import DefeatZealots
 
 class DQDefeatZealots1v2(DefeatZealots): 
     def __init__(self):
@@ -39,12 +39,12 @@ class DQDefeatZealots1v2(DefeatZealots):
         UP WALL, LEFT WALL, DOWN WALL, RIGHT WALL,
         COOLDOWN]
     '''
-    def get_state(self, env):
+    def get_state(self):
         # prepare state
         state = [10,10,10,10,10,10,10,10, 0, 0,0,0,0]
 
-        stalkerx, stalkery = super()._get_meangroup_position(env, self.UNIT_ALLY)
-        zealots = super()._get_group(env, self.UNIT_ENEMY)
+        stalkerx, stalkery = super()._get_meangroup_position(group_type=self.UNIT_ALLY)
+        zealots = super()._get_group(group_type=self.UNIT_ENEMY)
 
         for unit in zealots:
             # get direction
@@ -102,12 +102,10 @@ class DQDefeatZealots1v2(DefeatZealots):
         if (stalkerx + self._MOVE_VAL) > 60.5:
             state[11] = 1
 
-        self.current_can_shoot = True
         # check cooldown
-        if super()._can_shoot(env, self.UNIT_ALLY):
+        self.current_can_shoot = False
+        if super()._can_shoot(group_type=self.UNIT_ALLY):
             state[12] = 1
             self.current_can_shoot = True
-        else:
-            self.current_can_shoot = False
 
         return state
