@@ -81,7 +81,7 @@ class DefeatZealots(PySC2):
         Do step of the environment
     '''
     def step(self):
-        self._check_action_available()
+        self.__check_action_available()
         obs = self.env.step(actions=[self.action])
         self.obs = obs[0]
 
@@ -197,19 +197,6 @@ class DefeatZealots(PySC2):
 
     '''
         (Protected method)
-        Return if current action is available in the environment
-    '''
-    def _check_action_available(self):
-        if self.possible_actions[self.num_action] == self._ATTACK:
-            # ATTACK ACTION
-            if not (self._ATTACK_SCREEN in self.obs.observation.available_actions):
-                self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
-        else:
-            if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
-                self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
-
-    '''
-        (Protected method)
         Return specified group
     '''
     def _get_group(self, group_type):
@@ -320,3 +307,16 @@ class DefeatZealots(PySC2):
     def _get_dist(self, A, B):
         newDist = math.sqrt(pow(A[0] - B[0], 2) + pow(A[1] - B[1], 2))
         return newDist
+
+    '''
+        (Private method)
+        Return if current action is available in the environment
+    '''
+    def __check_action_available(self):
+        if self.possible_actions[self.num_action] == self._ATTACK:
+            # ATTACK ACTION
+            if not (self._ATTACK_SCREEN in self.obs.observation.available_actions):
+                self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
+        else:
+            if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
+                self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])

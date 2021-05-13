@@ -6,7 +6,7 @@ from environment.mtb.movetobeacon import MoveToBeacon
 class DQMoveToBeacon(MoveToBeacon): 
     def __init__(self):
         super().__init__()
-
+        
     '''
         Return basic information for Deep Q-Learning.
     '''

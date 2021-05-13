@@ -5,9 +5,9 @@ from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.lib import units
 
-from agents.abstract_base import AbstractBase
+from environment.pysc2_env import PySC2 # environment
 
-class BuildMarines(AbstractBase): 
+class BuildMarines(PySC2): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
     _PLAYER_NEUTRAL = 3
@@ -60,7 +60,7 @@ class BuildMarines(AbstractBase):
     ]
 
     def __init__(self):
-        super().__init__()
+        super().__init__(args=['BuildMarines'])
 
         self.houses_positions =[
                 {'x': 3.5, 'y': 43.5},
@@ -99,35 +99,10 @@ class BuildMarines(AbstractBase):
 
         self.marines_max = 159
 
-    def get_args(self):
-        super().get_args()
-
-        return ['BuildMarines']
-    
-    '''
-        Return basic information.
-    '''
-    def get_info(self):
-        return {
-            'actions' : self.possible_actions, 
-             'num_states' : 20,
-             'discount' : 0.99,
-             'replay_mem_size' : 50_000,
-             'learn_every' : 20,
-             'min_replay_mem_size' : 512,
-             'minibatch_size' : 256,
-             'update_time' : 5,
-             'max_cases' : 1024,
-             'cases_to_delete' : 128,
-             'hidden_nodes' : 150,
-             'hidden_layer' : 2}
-
     '''
         Prepare basic parameters.
     '''
-    def prepare(self, env):
-        super().prepare(env=env)
-
+    def prepare(self):
         self.houses_build = 0
         self.maxHouses = 20
 
@@ -141,134 +116,47 @@ class BuildMarines(AbstractBase):
 
         self.action = actions.FunctionCall(self._NO_OP, [])
 
-        return 0
-
     '''
         Update basic values and train
     '''
-    def update(self, env, deltaTime):
-        super().update(env=env, deltaTime=deltaTime)
+    def update(self, deltaTime):
         self.cont_steps += 1
 
     '''
         Do step of the environment
     '''
-    def step(self, env, environment):
+    def step(self):
         for func in self.action:
-            finalAct = self.__check_action_available(env=env, action=func)
-            env = environment.step(actions=[finalAct])
+            finalAct = self.__check_action_available(action=func)
+            obs = self.env.step(actions=[finalAct])
+            self.obs = obs[0]
         self.action = [actions.FunctionCall(self._NO_OP, [])]
-        return env
-
-    '''
-        Return agent state
-        [IDLE WORKERS,
-        FOOD,
-        MINERALS,
-        TRAINING WORKER,
-        WORKERS HARVESTING, 
-        HOUSE BUILD, 
-        BARRACKS AVAILABLE ... 8, 
-        HOUSE BUILDING, 
-        BARRACKS BUILDING,
-        HOUSE AVAILABLE,
-        BARRACKS AVAILABLE,
-        MARINE AVAILABLE,
-        MARINE BUILDING
-        ]
-    '''
-    def get_state(self, env):
-        state = [0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0, 0, 0, 0, 0, 0, 0]
-
-        if self.cont_steps < self.ignored_steps:
-            return state
-
-        
-        state[0] = env.observation.player.idle_worker_count / 10
-
-        remaining_food = env.observation.player.food_cap - env.observation.player.food_used
-        
-        state[1] = remaining_food/10
-
-
-        state[2] = env.observation.player.minerals / 1000
-
-        if self.__get_group(env, self._TERRAN_COMMANDCENTER)[0].order_progress_0 > 0:
-            state[3] = 1
-        else:
-            state[3] = 0
-
-        state[4] = self.__get_workers_harvesting(env)/10
-
-        if self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
-            state[5] = 1
-        else:
-            state[5] = 0
-   
-        #enabled barracks
-        for i in range(6, 6 + self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) - self.__get_barracks_used(env)):
-            state[i] = 1
-
-        if self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
-            state[14] = 1
-        else:
-            state[14] = 0
-            
-        if self.__get_buildings_building(env, self._TERRAN_BARRACKS) > 0:
-            state[15] = 1
-        else:
-            state[15] = 0
-
-        if (self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) + self.__get_buildings_building(env, self._TERRAN_SUPLY_DEPOT)) < 16 and env.observation.player.minerals >= 100:
-            state[16] = 1
-        else:
-            state[16] = 0
-
-        if (self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) + self.__get_buildings_building(env, self._TERRAN_BARRACKS)) < 8 and env.observation.player.minerals >= 150 and self.__get_number_of_built_building(env, self._TERRAN_SUPLY_DEPOT) > 0:
-            state[17] = 1
-        else:
-            state[17] = 0
-
-        if self.__get_number_of_built_building(env, self._TERRAN_BARRACKS) - self.__get_barracks_used(env) > 0 and env.observation.player.minerals >= 50 and remaining_food > 0:
-            state[18] = 1
-        else:
-            state[18] = 0         
-
-        if self.__get_barracks_used(env) > 0:
-            state[19] = 1
-        else:
-            state[19] = 0      
-        
-
-        return state
-
-
 
     '''
         Return action of environment
     '''
-    def get_action(self, env, action):
+    def get_action(self, action):
         func = [actions.FunctionCall(self._NO_OP, [])]
 
         if self.cont_steps < self.ignored_steps: 
             self.action = func
             return
 
-        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+        commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
 
         # harvest with idle worker
         if  self.possible_actions[action] == self._IDLE_WORKER_HARVEST:
-            if self.__get_workers_harvesting(env) >= 16:
+            if self._get_workers_harvesting() >= 16:
                 func = [actions.FunctionCall(self._NO_OP, [])]
             else:
-                minerals = self.__get_group(env, self._MINERAL_FIELD)
+                minerals = self._get_group(group_type=self._MINERAL_FIELD)
                 mineral = minerals[random.randint(0, len(minerals)-1)]
 
                 func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]),actions.FunctionCall(self._HARVEST_GATHER_SCREEN, [self._NOT_QUEUED, [mineral.x,mineral.y]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
 
         # build house with idle worker
         elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_HOUSE:
-            self.houses_build, func = self.__build_with_idle_worker(env=env, 
+            self.houses_build, func = self.__build_with_idle_worker(
                                                                 minerals_limit=100,
                                                                 max_number=self.maxHouses, 
                                                                 current_built=self.houses_build, 
@@ -279,7 +167,7 @@ class BuildMarines(AbstractBase):
 
         # build barrack with idle worker
         elif self.possible_actions[action] == self._IDLE_WORKER_BUILD_BARRACKS:
-            self.barracks_build, func = self.__build_with_idle_worker(env=env, 
+            self.barracks_build, func = self.__build_with_idle_worker( 
                                                                 minerals_limit=150,
                                                                 max_number=self.maxBarracks, 
                                                                 current_built=self.barracks_build, 
@@ -290,7 +178,7 @@ class BuildMarines(AbstractBase):
 
         # build house with worker
         elif self.possible_actions[action] == self._RANDOM_WORKER_BUILD_HOUSE:
-            self.houses_build, func = self.__build_with_random_worker(env=env, 
+            self.houses_build, func = self.__build_with_random_worker( 
                                                                 minerals_limit=100,
                                                                 max_number=self.maxHouses, 
                                                                 current_built=self.houses_build, 
@@ -301,7 +189,7 @@ class BuildMarines(AbstractBase):
 
         # build barrack with worker
         elif self.possible_actions[action] == self._RANDOM_WORKER_BUILD_BARRACKS:
-            self.barracks_build, func = self.__build_with_random_worker(env=env, 
+            self.barracks_build, func = self.__build_with_random_worker(
                                                                 minerals_limit=150,
                                                                 max_number=self.maxBarracks, 
                                                                 current_built=self.barracks_build, 
@@ -312,15 +200,15 @@ class BuildMarines(AbstractBase):
 
         # create worker
         elif self.possible_actions[action] == self._CREATE_WORKER:
-            if self.__get_group(env, self._TERRAN_COMMANDCENTER)[0].order_progress_0 > 0:
+            if self._get_group(group_type=self._TERRAN_COMMANDCENTER)[0].order_progress_0 > 0:
                 func = [actions.FunctionCall(self._NO_OP, [])]
             else:
                 func = [actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]]), actions.FunctionCall(self._RALLY_WORKERS_SCREEN, [self._NOT_QUEUED, [commandCenter[0].x,commandCenter[0].y]]),actions.FunctionCall(self._TRAIN_WORKER, [self._NOT_QUEUED]),actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
         
         # create marine
         elif self.possible_actions[action] == self._CREATE_MARINES:
-            barrack = self.__get_unused_barrack(env)
-            if barrack[0]== -1 and barrack[1] == -1:
+            barrack = self._get_unused_barrack()
+            if barrack == None:
                 func = [actions.FunctionCall(self._NO_OP, [])]
             else:
                 func = [actions.FunctionCall(self._SELECT_POINT, [[0], [barrack[0],barrack[1]]]), actions.FunctionCall(self._TRAIN_MARINE, [self._NOT_QUEUED]),actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
@@ -334,12 +222,12 @@ class BuildMarines(AbstractBase):
     '''
         Return reward
     '''
-    def get_reward(self, env, action):
+    def get_reward(self, action):
         reward = 0
-        if len(self.__get_group(env, self._TERRAN_MARINE)) > self.actualMarines:
+        if len(self._get_group(group_type=self._TERRAN_MARINE)) > self.actualMarines:
             #reward = self.actualMarines
-            reward = len(self.__get_group(env, self._TERRAN_MARINE)) - self.actualMarines
-            self.actualMarines = len(self.__get_group(env, self._TERRAN_MARINE))
+            reward = len(self._get_group(group_type=self._TERRAN_MARINE)) - self.actualMarines
+            self.actualMarines = len(self._get_group(group_type=self._TERRAN_MARINE))
 
 
         return reward
@@ -347,18 +235,123 @@ class BuildMarines(AbstractBase):
     '''
         Return True if we must end this episode
     '''
-    def get_end(self, env):
-        minerals = self.__get_group(env, self._MINERAL_FIELD)
-        ideal = self.__get_ideal_harvesting(env)
+    def get_end(self):
+        minerals = self._get_group(group_type=self._MINERAL_FIELD)
+        ideal = self._get_ideal_harvesting()
         return not minerals or (ideal != 16)
+
+    '''
+        (Protected method)
+        Return specified group
+    '''
+    def _get_group(self, group_type):
+        group = [unit for unit in self.obs.observation['feature_units'] 
+                    if unit.unit_type == group_type]
+        return group
+        
+    '''
+        (Protected method)
+        Return number of barracks used
+    '''    
+    def _get_barracks_used(self):
+        barracks = self._get_group(group_type=self._TERRAN_BARRACKS)
+        used = 0
+        for i in range(0, len(barracks)):
+            if barracks[i].order_progress_0 > 0:
+                used += 1
+        return used
+        
+    '''
+        (Protected method)
+        Return percentage of barracks used
+    '''    
+    def _get_percentage_of_barracks_used(self):
+        barracks = self._get_group(group_type=self._TERRAN_BARRACKS)
+        used = 0
+        built = 0
+        for i in range(0, len(barracks)):
+            if barracks[i].order_progress_0 > 0:
+                used += 1
+            if barracks[i].build_progress < 100:
+                built += 1
+        if built == 0:
+            return 0
+        else:
+            return used / built
+        
+    '''
+        (Protected method)
+        Return number of specify building buildings
+    '''    
+    def _get_buildings_building(self, building_type):
+        workers = self._get_group(group_type=self._TERRAN_SCV)
+        edificios = 0
+        for i in range(0, len(workers)):
+            if workers[i].active == 1 and building_type == self._TERRAN_BARRACKS and workers[i].order_id_0 == 185:
+                edificios += 1
+            elif workers[i].active == 1 and building_type == self._TERRAN_SUPLY_DEPOT and workers[i].order_id_0 == 222:
+                edificios += 1
+        return edificios
+        
+    '''
+        (Protected method)
+        Return a harvesting worker.
+        In case of not exist harvesting worker, return None
+    '''    
+    def _get_harvesting_worker(self):
+        workers = self._get_group(group_type=self._TERRAN_SCV)
+        for i in range(0, len(workers)):
+            if workers[i].active == 1 and (workers[i].order_id_0 == 359 or workers[i].order_id_0 == 362):
+                return [workers[i].x, workers[i].y]
+        return None
+        
+    '''
+        (Protected method)
+        Return current number of harvesting workers
+    '''    
+    def _get_workers_harvesting(self):
+        commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
+        return commandCenter[0].assigned_harvesters
+
+    '''
+        (Protected method)
+        Return idel number of harvesting workers
+    '''    
+    def _get_ideal_harvesting(self):
+        commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
+        return commandCenter[0].ideal_harvesters
+        
+    '''
+        (Protected method)
+        Return position of unused barrack.
+        In case of not found unused barrack, return None
+    '''
+    def _get_unused_barrack(self):
+        barracks = self._get_group(group_type=self._TERRAN_BARRACKS)
+        for i in range(0, len(barracks)):
+            if barracks[i].order_progress_0 == 0 and barracks[i].build_progress == 100:
+                return [barracks[i].x, barracks[i].y]
+        return None
+
+
+    '''
+        (Protected method)
+        Return number of specify built building
+    '''
+    def _get_number_of_built_building(self, group_type):
+        buildings = self._get_group(group_type=group_type)
+        built = 0
+        for i in range(0, len(buildings)):
+            if buildings[i].build_progress == 100:
+                built += 1
+        return built
 
     '''
         (Private method)
         Check if current action is available. If not, use default action
     '''
-    def __check_action_available(self, env, action):
-
-        if not (action[0] in env.observation.available_actions):
+    def __check_action_available(self, action):
+        if not (action[0] in self.obs.observation.available_actions):
             return [actions.FunctionCall(self._NO_OP, [])]
         else:
             return action
@@ -368,12 +361,12 @@ class BuildMarines(AbstractBase):
         Build specify building with idle worker if it is possible. 
         Return current number of that kind of building and action function
     '''
-    def __build_with_idle_worker(self, env, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
-        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+    def __build_with_idle_worker(self, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
+        commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
 
-        buildings_number = len(self.__get_group(env, build_type)) + self.__get_buildings_building(env, build_type)
+        buildings_number = len(self._get_group(group_type=build_type)) + self._get_buildings_building(building_type=build_type)
         if current_built >= max_number and buildings_number < max_number:
-            lost_buildings = self.__get_group(env, build_type)
+            lost_buildings = self._get_group(group_type=build_type)
             positions = building_positions.copy()
             for building in lost_buildings:
                 for pos in building_positions:
@@ -385,7 +378,7 @@ class BuildMarines(AbstractBase):
 
             func = [actions.FunctionCall(self._SELECT_IDLE_WORKER, [[0]]), actions.FunctionCall(build_action_type, [self._NOT_QUEUED, [positions[0]['x'], positions[0]['y']]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]
 
-        elif current_built >= max_number or env.observation.player.idle_worker_count <= 0 or env.observation.player.minerals < minerals_limit or (other_build_type != None and self.__get_number_of_built_building(env, other_build_type) <= 0):
+        elif current_built >= max_number or self.obs.observation.player.idle_worker_count <= 0 or self.obs.observation.player.minerals < minerals_limit or (other_build_type != None and self._get_number_of_built_building(group_type=other_build_type) <= 0):
             func = [actions.FunctionCall(self._NO_OP, [])]
 
         else:
@@ -402,12 +395,12 @@ class BuildMarines(AbstractBase):
         Build specify building with random worker if it is possible. 
         Return current number of that kind of building and action function
     '''
-    def __build_with_random_worker(self, env, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
-        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
+    def __build_with_random_worker(self, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
+        commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
 
-        buildings_number = len(self.__get_group(env, build_type)) + self.__get_buildings_building(env, build_type)
+        buildings_number = len(self._get_group(group_type=build_type)) + self._get_buildings_building(building_type=build_type)
         if current_built >= max_number and buildings_number < max_number:
-            lost_building = self.__get_group(env, build_type)
+            lost_building = self._get_group(group_type=build_type)
             positions = building_positions.copy()
             for building in lost_building:
                 for pos in building_positions:
@@ -417,20 +410,20 @@ class BuildMarines(AbstractBase):
                         positions.remove(pos)
                         break
 
-            point = self.__get_harvesting_worker(env)
+            point = self._get_harvesting_worker()
             if point == None:
                 func = [actions.FunctionCall(self._NO_OP, [])]
             else:
                 func = [actions.FunctionCall(self._SELECT_POINT, [[0], [point[0],point[1]]]), actions.FunctionCall(build_action_type, [self._NOT_QUEUED, [positions[0]['x'], positions[0]['y']]]), actions.FunctionCall(self._SELECT_POINT, [[0], [commandCenter[0].x,commandCenter[0].y]])]          
 
-        elif current_built >= max_number or env.observation.player.minerals < minerals_limit or (other_build_type != None and self.__get_number_of_built_building(env, other_build_type) <= 0):
+        elif current_built >= max_number or self.obs.observation.player.minerals < minerals_limit or (other_build_type != None and self._get_number_of_built_building(group_type=other_build_type) <= 0):
             func = [actions.FunctionCall(self._NO_OP, [])]
 
         else:
             x = building_positions[current_built]["x"]
             y = building_positions[current_built]["y"]
 
-            point = self.__get_harvesting_worker(env)
+            point = self._get_harvesting_worker()
             if point == None:
                 func = [actions.FunctionCall(self._NO_OP, [])]
             else:
@@ -438,130 +431,3 @@ class BuildMarines(AbstractBase):
                 current_built += 1
 
         return current_built, func
-
-    '''
-        (Private method)
-        Return unit position
-    '''
-    def __get_unit_pos(self, env, view):
-        ai_view = env.observation['feature_screen'][self._PLAYER_RELATIVE]
-        unitys, unitxs = (ai_view == view).nonzero()
-        if len(unitxs) == 0:
-            unitxs = np.array([0])
-        if len(unitys) == 0:
-            unitys = np.array([0])
-        return unitxs.mean(), unitys.mean()
-
-    '''
-        (Private method)
-        Return angle formed from two lines
-    '''
-    def __ang(self, lineA, lineB):
-        # Get nicer vector form
-        vA = lineA
-        vB = lineB
-        # Get dot prod
-        dot_prod = np.dot(vA, vB)
-        # Get magnitudes
-        magA = np.dot(vA, vA)**0.5
-        magB = np.dot(vB, vB)**0.5
-        # Get cosine value
-        cos = dot_prod/magA/magB
-        # Get angle in radians and then convert to degrees
-        angle = math.acos(dot_prod/magB/magA)
-        # Basically doing angle <- angle mod 360
-        ang_deg = math.degrees(angle)%360
-
-
-        return ang_deg
-
-    '''
-        (Private method)
-        Return dist from marine and beacon position
-    '''
-    def __get_dist(self, env):
-        marinex, mariney = self.__get_unit_pos(env, self._PLAYER_SELF)
-        beaconx, beacony = self.__get_unit_pos(env, self._PLAYER_NEUTRAL)
-
-        newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
-        return newDist
-
-    '''
-        (Private method)
-        Return specified group
-    '''
-    def __get_group(self, obs, group_type):
-        group = [unit for unit in obs.observation['feature_units'] 
-                    if unit.unit_type == group_type]
-        return group
-
-    def __get_barracks_used(self, obs):
-        barracks = self.__get_group(obs, self._TERRAN_BARRACKS)
-        used = 0
-        for i in range(0, len(barracks)):
-            if barracks[i].order_progress_0 > 0:
-                used += 1
-        return used
-
-    def __get_percentage_of_barracks_used(self, obs):
-        barracks = self.__get_group(obs, self._TERRAN_BARRACKS)
-        used = 0
-        built = 0
-        for i in range(0, len(barracks)):
-            if barracks[i].order_progress_0 > 0:
-                used += 1
-            if barracks[i].build_progress < 100:
-                built += 1
-        if built == 0:
-            return 0
-        else:
-            return used / built
-
-    def __get_buildings_building(self, obs, buildingType):
-        workers = self.__get_group(obs, self._TERRAN_SCV)
-        edificios = 0
-        for i in range(0, len(workers)):
-            if workers[i].active == 1 and buildingType == self._TERRAN_BARRACKS and workers[i].order_id_0 == 185:
-                edificios += 1
-            elif workers[i].active == 1 and buildingType == self._TERRAN_SUPLY_DEPOT and workers[i].order_id_0 == 222:
-                edificios += 1
-        return edificios
-
-
-        barracks = self.__get_group(obs, buildingType)
-        built = 0
-        for i in range(0, len(barracks)):
-            if barracks[i].build_progress < 100:
-                built += 1
-        return built
-
-    def __get_harvesting_worker(self, obs):
-        workers = self.__get_group(obs, self._TERRAN_SCV)
-        for i in range(0, len(workers)):
-            if workers[i].active == 1 and (workers[i].order_id_0 == 359 or workers[i].order_id_0 == 362):
-                return [workers[i].x, workers[i].y]
-    
-    def __get_workers_harvesting(self, env):
-        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
-        return commandCenter[0].assigned_harvesters
-    
-    def __get_ideal_harvesting(self, env):
-        commandCenter = self.__get_group(env, self._TERRAN_COMMANDCENTER)
-        return commandCenter[0].ideal_harvesters
-        
-
-    def __get_unused_barrack(self, obs):
-        barracks = self.__get_group(obs, self._TERRAN_BARRACKS)
-        for i in range(0, len(barracks)):
-            if barracks[i].order_progress_0 == 0 and barracks[i].build_progress == 100:
-                return [barracks[i].x, barracks[i].y]
-        return [-1,-1]
-
-
-    def __get_number_of_built_building(self, obs, group_type):
-        buildings = self.__get_group(obs, group_type)
-        built = 0
-        for i in range(0, len(buildings)):
-            if buildings[i].build_progress == 100:
-                built += 1
-        return built

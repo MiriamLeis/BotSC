@@ -64,7 +64,7 @@ class MoveToBeacon(PySC2):
         Do step of the environment
     '''
     def step(self):
-        self._check_action_available()
+        self.__check_action_available()
         obs = self.env.step(actions=[self.action])
         self.obs = obs[0]
 
@@ -149,14 +149,6 @@ class MoveToBeacon(PySC2):
 
     '''
         (Protected method)
-        Check if current action is available. If not, use default action
-    '''
-    def _check_action_available(self):
-        if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
-            self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])
-
-    '''
-        (Protected method)
         Return unit position
     '''
     def _get_unit_pos(self, view):
@@ -201,3 +193,11 @@ class MoveToBeacon(PySC2):
 
         newDist = math.sqrt(pow(marinex - beaconx, 2) + pow(mariney - beacony, 2))
         return newDist
+
+    '''
+        (Private method)
+        Check if current action is available. If not, use default action
+    '''
+    def __check_action_available(self):
+        if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
+            self.action = actions.FunctionCall(self._SELECT_ARMY, [self._SELECT_ALL])

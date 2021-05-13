@@ -3,7 +3,7 @@ import os
 
 from tqdm import tqdm
 
-from environment.dzwb1v2.defeatzealots1v2_dq import DQDefeatZealots1v2 # environment
+from environment.bm.buildmarines_dq import DQBuildMarines # environment
 from agents.dqagent import DQAgent # algorithm agent
 
 from absl import flags
@@ -13,10 +13,10 @@ flags.DEFINE_integer('episodes', 40, 'Number of episodes.', lower_bound=0)
 flags.DEFINE_integer('steps', 2000, 'Steps from each episode.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 2, 'Episodes until backup save.', lower_bound=0)
 flags.DEFINE_float('time_for_action', 0.2, 'Time until choose new action.', lower_bound=0.0)
-flags.DEFINE_boolean('learn', False, 'Agent will learn.')
+flags.DEFINE_boolean('learn', True, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
-flags.DEFINE_string('filename', 'dzwb1v2', 'Filename for load or save.')
+flags.DEFINE_string('filename', 'bm', 'Filename for load or save.')
 
 FLAGS(sys.argv)
 
@@ -33,7 +33,7 @@ def main():
         os.makedirs(os.getcwd() + FILEPATH_SAVES)
 
     # initialize environment
-    env = DQDefeatZealots1v2()
+    env = DQBuildMarines()
 
     # initialize agent
     info = env.get_info()
