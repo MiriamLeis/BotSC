@@ -3,7 +3,7 @@ import math
 
 from environment.mtb.movetobeacon import MoveToBeacon
 
-class DQMoveToBeacon(MoveToBeacon): 
+class MoveToBeacon_8States(MoveToBeacon): 
     def __init__(self):
         super().__init__()
         

@@ -4,7 +4,7 @@
 class AbstractAgent:
     def __init__(self, info):
         return
-    def prepare(self, episode):
+    def prepare(self, env, episode):
         return
     def update(self, env, deltaTime):
         return

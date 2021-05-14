@@ -281,17 +281,42 @@ class BuildMarines(PySC2):
         
     '''
         (Protected method)
+        Return position of unused barrack.
+        In case of not found unused barrack, return None
+    '''
+    def _get_unused_barrack(self):
+        barracks = self._get_group(group_type=self._TERRAN_BARRACKS)
+        for i in range(0, len(barracks)):
+            if barracks[i].order_progress_0 == 0 and barracks[i].build_progress == 100:
+                return [barracks[i].x, barracks[i].y]
+        return None
+        
+    '''
+        (Protected method)
         Return number of specify building buildings
     '''    
-    def _get_buildings_building(self, building_type):
+    def _get_buildings_building(self, group_type):
         workers = self._get_group(group_type=self._TERRAN_SCV)
         edificios = 0
         for i in range(0, len(workers)):
-            if workers[i].active == 1 and building_type == self._TERRAN_BARRACKS and workers[i].order_id_0 == 185:
+            if workers[i].active == 1 and group_type == self._TERRAN_BARRACKS and workers[i].order_id_0 == 185:
                 edificios += 1
-            elif workers[i].active == 1 and building_type == self._TERRAN_SUPLY_DEPOT and workers[i].order_id_0 == 222:
+            elif workers[i].active == 1 and group_type == self._TERRAN_SUPLY_DEPOT and workers[i].order_id_0 == 222:
                 edificios += 1
         return edificios
+
+
+    '''
+        (Protected method)
+        Return number of specify built building
+    '''
+    def _get_number_of_built_building(self, group_type):
+        buildings = self._get_group(group_type=group_type)
+        built = 0
+        for i in range(0, len(buildings)):
+            if buildings[i].build_progress == 100:
+                built += 1
+        return built
         
     '''
         (Protected method)
@@ -320,31 +345,6 @@ class BuildMarines(PySC2):
     def _get_ideal_harvesting(self):
         commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
         return commandCenter[0].ideal_harvesters
-        
-    '''
-        (Protected method)
-        Return position of unused barrack.
-        In case of not found unused barrack, return None
-    '''
-    def _get_unused_barrack(self):
-        barracks = self._get_group(group_type=self._TERRAN_BARRACKS)
-        for i in range(0, len(barracks)):
-            if barracks[i].order_progress_0 == 0 and barracks[i].build_progress == 100:
-                return [barracks[i].x, barracks[i].y]
-        return None
-
-
-    '''
-        (Protected method)
-        Return number of specify built building
-    '''
-    def _get_number_of_built_building(self, group_type):
-        buildings = self._get_group(group_type=group_type)
-        built = 0
-        for i in range(0, len(buildings)):
-            if buildings[i].build_progress == 100:
-                built += 1
-        return built
 
     '''
         (Private method)

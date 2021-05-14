@@ -5,7 +5,7 @@ from pysc2.lib import units
 
 from environment.dzwb2v2.defeatzealots2v2 import DefeatZealots2v2
 
-class DQDefeatZealots2v2(DefeatZealots2v2): 
+class DefeatZealots2v2_21States(DefeatZealots2v2): 
     def __init__(self):
         super().__init__()
 

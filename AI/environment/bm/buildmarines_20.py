@@ -3,7 +3,7 @@ import math
 
 from environment.bm.buildmarines import BuildMarines
 
-class DQBuildMarines(BuildMarines): 
+class BuildMarines_20States(BuildMarines): 
     def __init__(self):
         super().__init__()
 

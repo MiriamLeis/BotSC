@@ -3,7 +3,7 @@ import math
 
 from environment.dzwb.defeatzealots import DefeatZealots
 
-class DQDefeatZealots1v2(DefeatZealots): 
+class DefeatZealots1v2_13States(DefeatZealots): 
     def __init__(self):
         super().__init__(args=['DefeatZealotswithBlink_2enemies'])
         
