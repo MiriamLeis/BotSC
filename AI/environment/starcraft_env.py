@@ -3,7 +3,7 @@ from environment.environment import Environment
 from pysc2.env import sc2_env
 from pysc2 import maps
 
-class PySC2(Environment):
+class StarcraftEnv(Environment):
     def __init__(self, args=[]):
         AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
             feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16),

@@ -5,9 +5,9 @@ from pysc2.lib import actions
 from pysc2.lib import features
 from pysc2.lib import units
 
-from environment.pysc2_env import PySC2 # environment
+from environment.starcraft_env import StarcraftEnv # environment
 
-class BuildMarines(PySC2): 
+class BuildMarines(StarcraftEnv): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
     _PLAYER_NEUTRAL = 3

@@ -3,9 +3,9 @@ import math
 
 from pysc2.lib import actions, features, units
 
-from environment.pysc2_env import PySC2 # environment
+from environment.starcraft_env import StarcraftEnv # environment
 
-class DefeatZealots2v2(PySC2): 
+class DefeatZealots2v2(StarcraftEnv): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
     _PLAYER_NEUTRAL = 3
