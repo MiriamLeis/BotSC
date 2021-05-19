@@ -364,7 +364,7 @@ class BuildMarines(StarcraftEnv):
     def __build_with_idle_worker(self, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
         commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
 
-        buildings_number = len(self._get_group(group_type=build_type)) + self._get_buildings_building(building_type=build_type)
+        buildings_number = len(self._get_group(group_type=build_type)) + self._get_buildings_building(group_type=build_type)
         if current_built >= max_number and buildings_number < max_number:
             lost_buildings = self._get_group(group_type=build_type)
             positions = building_positions.copy()
@@ -398,7 +398,7 @@ class BuildMarines(StarcraftEnv):
     def __build_with_random_worker(self, minerals_limit, max_number, current_built, building_positions, build_action_type, build_type, other_build_type = None):
         commandCenter = self._get_group(group_type=self._TERRAN_COMMANDCENTER)
 
-        buildings_number = len(self._get_group(group_type=build_type)) + self._get_buildings_building(building_type=build_type)
+        buildings_number = len(self._get_group(group_type=build_type)) + self._get_buildings_building(group_type=build_type)
         if current_built >= max_number and buildings_number < max_number:
             lost_building = self._get_group(group_type=build_type)
             positions = building_positions.copy()

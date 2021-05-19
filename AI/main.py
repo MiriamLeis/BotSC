@@ -3,17 +3,17 @@ import os
 
 from tqdm import tqdm
 
-from environment.bm.buildmarines_dq import DQBuildMarines # environment
+from environment.bm.buildmarines_20 import BuildMarines_20States # environment
 from agents.dqagent import DQAgent # algorithm agent
 
 from absl import flags
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer('episodes', 40, 'Number of episodes.', lower_bound=0)
-flags.DEFINE_integer('steps', 2000, 'Steps from each episode.', lower_bound=0)
-flags.DEFINE_integer('number_agents', 2, 'Number of agents.', lower_bound=0)
+flags.DEFINE_integer('episodes', 25, 'Number of episodes.', lower_bound=0)
+flags.DEFINE_integer('steps', 14250, 'Steps from each episode.', lower_bound=0)
+flags.DEFINE_integer('number_agents', 1, 'Number of agents.', lower_bound=0)
 flags.DEFINE_integer('episodes_for_save', 2, 'Episodes until backup save.', lower_bound=0)
-flags.DEFINE_float('time_for_action', 0.2, 'Time until choose new action.', lower_bound=0.0)
+flags.DEFINE_float('time_for_action', 0.5, 'Time until choose new action.', lower_bound=0.0)
 flags.DEFINE_boolean('learn', True, 'Agent will learn.')
 flags.DEFINE_boolean('load', False, 'Agent will load learning information. Not needed if it is not going to learn.')
 flags.DEFINE_string('filepath', '\\saves\\', 'Filepath where is file for load or save.')
@@ -37,15 +37,15 @@ def main():
             os.makedirs(os.getcwd() + FILEPATH_SAVES[i])
 
     # initialize environment
-    env = DQBuildMarines()
+    env = BuildMarines_20States()
 
-    # initialize agents
     agents = [None] * FLAGS.number_agents
     for i in range(FLAGS.number_agents):
         info = env.get_info()
         info['learn'] = FLAGS.learn
         info['episodes'] = FLAGS.episodes
         
+        # initialize agents
         agents[i] = DQAgent(info=info)
         
         env.switch()
@@ -68,12 +68,14 @@ def main():
         if FLAGS.learn:
             # learn reward for last action
             if end:
-                agent.train()
+                for agent in agents:
+                    agent.train()
+                    env.switch()
 
             # backup save
             if ep >= FLAGS.episodes_for_save:
-                for agent in agents:
-                    agent.save(filepath=FILEPATH_SAVES + str(episode))
+                for i in range(len(agents)):    
+                    agents[i].save(filepath=FILEPATH_SAVES[i] + str(episode))
                     env.switch()
                 ep = 0
             ep += 1
@@ -100,7 +102,7 @@ def main():
             # time to choose new action
             if actualTime >= FLAGS.time_for_action:
                 for agent in agents:
-                    agent.update(env=env, deltaTime=deltaTime)
+                    agent.update(env=env, deltaTime=deltaTime, step=step)
                     env.switch()
 
                 actualTime = 0.0
@@ -109,10 +111,8 @@ def main():
             
             env.step()
     
-    i = 0
-    for agent in agents:
-        agent.save(filepath=FLAGS.filepath + FLAGS.filename[i])
+    for i in range(len(agents)):    
+        agents[i].save(filepath=FLAGS.filepath + FLAGS.filename[i])
         env.switch()
-        i += 1
 
 main()

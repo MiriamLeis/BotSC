@@ -112,7 +112,7 @@ class DQAgent(AbstractAgent):
 
 
 
-        history = self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=0, 
+        self.model.fit(np.array(X), np.array(y), batch_size=self.min_rep_mem_size, verbose=0, 
             shuffle=False)
 
         #updating to determinate if we want to update target_model yet
@@ -155,7 +155,6 @@ class DQAgent(AbstractAgent):
         This action could be random or the one with maxium reward, depending on epsilon value.
     '''
     def _choose_action(self, env):
-        #if np.random.rand() > 0.85:
         if np.random.rand() > self.epsilon:
             self.action = np.random.choice(self.actions)
             env.get_action(action=self.action)
@@ -203,4 +202,4 @@ class DQAgent(AbstractAgent):
         Update epsilon value
     '''
     def __set_epsilon(self, episode):
-        self.epsilon = (episode / (self.total_episodes - (self.total_episodes / 2)))
+        self.epsilon = (episode / (self.total_episodes - (self.total_episodes / 3)))
