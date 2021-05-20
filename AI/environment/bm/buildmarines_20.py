@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from environment.bm.buildmarines import BuildMarines
+from environment.bm.buildhouses import BuildMarines
 
 class BuildMarines_20States(BuildMarines): 
     def __init__(self):
@@ -43,7 +43,7 @@ class BuildMarines_20States(BuildMarines):
         ]
     '''
     def get_state(self):
-        state = [0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0, 0, 0, 0, 0, 0, 0]
+        state = [0, 0, 0, 0, 0, 0, 0, 0,]
 
         if self.cont_steps < self.ignored_steps:
             return state
@@ -73,9 +73,6 @@ class BuildMarines_20States(BuildMarines):
         else:
             state[5] = 0
 
-        # nodes active for each barrack used
-        for i in range(6, 6 + self._get_number_of_built_building(group_type=self._TERRAN_BARRACKS) - self._get_barracks_used()):
-            state[i] = 1
 
         # if we are building a house
         if self._get_buildings_building(group_type=self._TERRAN_SUPLY_DEPOT) > 0:
@@ -83,35 +80,14 @@ class BuildMarines_20States(BuildMarines):
         else:
             state[14] = 0
         
-        # if we are building a barrack
-        if self._get_buildings_building(group_type=self._TERRAN_BARRACKS) > 0:
-            state[15] = 1
-        else:
-            state[15] = 0
+
 
         #if we could build a house
         if (self._get_number_of_built_building(group_type=self._TERRAN_SUPLY_DEPOT) + self._get_buildings_building(group_type=self._TERRAN_SUPLY_DEPOT)) < 16 and self.obs.observation.player.minerals >= 100:
             state[16] = 1
         else:
             state[16] = 0
-
-        # if we could build a barrack
-        if (self._get_number_of_built_building(group_type=self._TERRAN_BARRACKS) + self._get_buildings_building(group_type=self._TERRAN_BARRACKS)) < 8 and self.obs.observation.player.minerals >= 150 and self._get_number_of_built_building(group_type=self._TERRAN_SUPLY_DEPOT) > 0:
-            state[17] = 1
-        else:
-            state[17] = 0
-
-        # if we could create a marine
-        if self._get_number_of_built_building(group_type=self._TERRAN_BARRACKS) - self._get_barracks_used() > 0 and self.obs.observation.player.minerals >= 50 and remaining_food > 0:
-            state[18] = 1
-        else:
-            state[18] = 0         
-
-        # if we are creating a marine
-        if self._get_barracks_used() > 0:
-            state[19] = 1
-        else:
-            state[19] = 0      
+    
         
 
         return state
