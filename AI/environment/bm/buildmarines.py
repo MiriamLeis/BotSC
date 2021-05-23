@@ -110,6 +110,7 @@ class BuildMarines(StarcraftEnv):
         self.maxBarracks = 8
 
         self.actualMarines = 0
+        self.could_create_marine = False
 
         self.ignored_steps = 25
         self.cont_steps = 0
@@ -224,12 +225,14 @@ class BuildMarines(StarcraftEnv):
     '''
     def get_reward(self, action):
         reward = 0
+
         if len(self._get_group(group_type=self._TERRAN_MARINE)) > self.actualMarines:
-            #reward = self.actualMarines
             reward = len(self._get_group(group_type=self._TERRAN_MARINE)) - self.actualMarines
             self.actualMarines = len(self._get_group(group_type=self._TERRAN_MARINE))
-
-
+        
+        if (self.possible_actions[action] == self._CREATE_MARINES) and not self.could_create_marine:
+            reward -= 1
+            
         return reward
 
     '''
