@@ -3,7 +3,7 @@ from environment.environment import Environment
 from pysc2.env import sc2_env
 from pysc2 import maps
 
-class StarcraftEnv(Environment):
+class StarCraftEnv(Environment):
     def __init__(self, args=[]):
         AGENT_INTERFACE_FORMAT = sc2_env.AgentInterfaceFormat(
             feature_dimensions=sc2_env.Dimensions(screen=64, minimap=16),
@@ -19,9 +19,6 @@ class StarcraftEnv(Environment):
     def reset(self):
         obs = self.env.reset()
         self.obs = obs[0]
-                                
-    def get_environment(self):
-        return self.env
 
     def get_obs(self):
         return self.obs

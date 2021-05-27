@@ -3,9 +3,9 @@ import math
 
 from pysc2.lib import actions, features, units
 
-from environment.starcraft_env import StarcraftEnv # environment
+from environment.starcraft_env import StarCraftEnv # environment
 
-class DefeatZealots2v2(StarcraftEnv): 
+class DefeatZealots2v2(StarCraftEnv): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
     _PLAYER_NEUTRAL = 3
@@ -160,21 +160,21 @@ class DefeatZealots2v2(StarcraftEnv):
 
         if self.possible_actions[action] == self._ATTACK_CLOSEST:
             # ATTACK ACTION
-            if self._ATTACK_SCREEN in self.get_obs().observation.available_actions:
+            if self._ATTACK_SCREEN in self.obs.observation.available_actions:
                 unitx, unity = self._get_meangroup_position(group_type=group_type)
                 zealot = self._get_zealot_closest(unit=[unitx,unity])
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         elif self.possible_actions[action] == self._ATTACK_LOWEST:
             # ATTACK ACTION
-            if self._ATTACK_SCREEN in self.get_obs().observation.available_actions:
+            if self._ATTACK_SCREEN in self.obs.observation.available_actions:
                 unitx, unity = self._get_meangroup_position(group_type=group_type)
                 zealot = self._get_zealot_lowest()
                 func = actions.FunctionCall(self._ATTACK_SCREEN, [self._NOT_QUEUED, [zealot.x, zealot.y]])
 
         else:
             # MOVING ACTION
-            if self._MOVE_SCREEN in self.get_obs().observation.available_actions:
+            if self._MOVE_SCREEN in self.obs.observation.available_actions:
                 unitx, unity = self._get_meangroup_position(group_type=group_type)
 
                 if  self.possible_actions[action] == self._UP:
@@ -316,7 +316,7 @@ class DefeatZealots2v2(StarcraftEnv):
         Return specified group
     '''
     def _get_group(self, group_type):
-        group = [unit for unit in self.get_obs().observation['feature_units'] 
+        group = [unit for unit in self.obs.observation['feature_units'] 
                     if unit.unit_type == group_type]
         return group
 
@@ -446,18 +446,18 @@ class DefeatZealots2v2(StarcraftEnv):
             unit = self._get_group(group_type=self.UNIT_AGENT_1)[0]
 
             if self.possible_actions[self.num_action_1] == self._ATTACK_CLOSEST or self._ATTACK_LOWEST:
-                if not (self._ATTACK_SCREEN in self.get_obs().observation.available_actions):
+                if not (self._ATTACK_SCREEN in self.obs.observation.available_actions):
                     self.action_1 = actions.FUNCTIONS.select_point("select",(unit.x, unit.y))
             else:
-                if not (self._MOVE_SCREEN in self.get_obs().observation.available_actions):
+                if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
                     self.action_1 = actions.FUNCTIONS.select_point("select",(unit.x, unit.y))
         else:
             # agent 2
             unit = self._get_group(group_type=self.UNIT_AGENT_2)[0]
 
             if self.possible_actions[self.num_action_2] == self._ATTACK_CLOSEST or self._ATTACK_LOWEST:
-                if not (self._ATTACK_SCREEN in self.get_obs().observation.available_actions):
+                if not (self._ATTACK_SCREEN in self.obs.observation.available_actions):
                     self.action_2 = actions.FUNCTIONS.select_point("select",(unit.x, unit.y))
             else:
-                if not (self._MOVE_SCREEN in self.get_obs().observation.available_actions):
+                if not (self._MOVE_SCREEN in self.obs.observation.available_actions):
                     self.action_2 = actions.FUNCTIONS.select_point("select",(unit.x, unit.y))

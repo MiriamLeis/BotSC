@@ -3,9 +3,9 @@ import math
 
 from pysc2.lib import actions, features, units
 
-from environment.starcraft_env import StarcraftEnv # environment
+from environment.starcraft_env import StarCraftEnv # environment
 
-class DefeatZealots(StarcraftEnv): 
+class DefeatZealots(StarCraftEnv): 
     '''
         Useful variables 
     '''

@@ -3,9 +3,9 @@ import math
 
 from pysc2.lib import actions, features
 
-from environment.starcraft_env import StarcraftEnv # environment
+from environment.starcraft_env import StarCraftEnv # environment
 
-class MoveToBeacon(StarcraftEnv): 
+class MoveToBeacon(StarCraftEnv): 
     _PLAYER_RELATIVE = features.SCREEN_FEATURES.player_relative.index
     _PLAYER_SELF = 1
     _PLAYER_NEUTRAL = 3
