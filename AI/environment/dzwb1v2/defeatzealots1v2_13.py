@@ -6,14 +6,6 @@ from environment.dzwb.defeatzealots import DefeatZealots
 class DefeatZealots1v2_13States(DefeatZealots): 
     def __init__(self):
         super().__init__(args=['DefeatZealotswithBlink_2enemies'])
-        
-    '''
-        Return map information.
-    '''
-    def get_args(self):
-        super().get_args()
-
-        return ['DefeatZealotswithBlink_2enemies']
 
     '''
         Return basic information for Deep Q-Learning.

@@ -2,8 +2,6 @@
     Interface
 """
 class AbstractAgent:
-    def __init__(self, info):
-        return
     def prepare(self, env, episode):
         return
     def update(self, env, deltaTime):
