@@ -12,7 +12,7 @@ class AbstractAgent:
         return
     def load(self, filepath):
         return
-    def _get_max_action(self):
+    def _get_max_action(self, env):
         return
-    def _choose_action(self):
+    def _choose_action(self, env):
         return
