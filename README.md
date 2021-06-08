@@ -34,7 +34,7 @@ Our project depends on the full StarCraft II game and only works with versions t
 The easiest way to get Starcraft II is to install it from [Battle.net](https://eu.shop.battle.net/es-es). Even the [Start Edition](https://starcraft2.com/es-es/) will work. If you changed the install location, you might need to set the `SC2PATH` environment variable with the correct location.
 
 ## Get Minigames
-You have modified minigames used in this project on `mini_games` folder of this repository. Copy this folder into your `Maps` folder into your Starcraft II installation directory.
+You have modified minigames used in this project on `mini_games\` folder. Copy this folder into your `Maps\` folder from your Starcraft II installation directory.
 The default installation directories are:
 * Windows: `C:\Program Files (x86)\StarCraft II\`
 * Mac: `/Applications/StarCraft II/`
@@ -48,5 +48,6 @@ mini_games = [ ##Now you add this few lines
     "DefeatZealotswithBlink", # 120s
     "DefeatZealotswithBlink_2enemies", # 120s
     "DefeatZealotswithBlink_2vs2", # 120s
+    "BuildMarines", # 900s
 ]
 ```
