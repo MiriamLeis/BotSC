@@ -1,10 +1,10 @@
-# [TFG] Artifical Intelligence for Starcraft II
+# [TFG] Reinforcement Learning for StarCraft II
 Authors:
 * Miriam Leis Baltanás
 * Pablo Joaquín Rodríguez Hidalgo
 
 # Start Guide
-This project uses PySC2 and Starcraft II in addition to a collection of modified minimaps for Starcraft II, which are included on this project.
+This project uses PySC2 and StarCraft II in addition to a collection of modified minimaps for StarCraft II, which are included on this project.
 
 ## Get PySC2
 *The follow instructions can be found on [PySC2](https://github.com/deepmind/pysc2 "PySC2 repository") repository*
@@ -25,16 +25,16 @@ $ git clone https://github.com/deepmind/pysc2.git
 $ pip install --upgrade pysc2/
 ```
 
-## Get Starcraft II
+## Get StarCraft II
 *The follow instructions can be found on [PySC2](https://github.com/deepmind/pysc2 "PySC2 repository") repository*
 ### Linux
 Follow [Blizzard's documentation](https://github.com/Blizzard/s2client-proto#downloads) to get the linux version. By default, PySC2 expects the game to live in `~/StarCraftII/`. You can override this path by setting the `SC2PATH` environment variable or creating your own run_config.
 ### Windows/MacOS
 Our project depends on the full StarCraft II game and only works with versions that include the API, which is 3.16.1 and above.
-The easiest way to get Starcraft II is to install it from [Battle.net](https://eu.shop.battle.net/es-es). Even the [Start Edition](https://starcraft2.com/es-es/) will work. If you changed the install location, you might need to set the `SC2PATH` environment variable with the correct location.
+The easiest way to get StarCraft II is to install it from [Battle.net](https://eu.shop.battle.net/es-es). Even the [Start Edition](https://starcraft2.com/es-es/) will work. If you changed the install location, you might need to set the `SC2PATH` environment variable with the correct location.
 
 ## Get Minigames
-You have modified minigames used in this project on `mini_games\` folder. Copy this folder into your `Maps\` folder from your Starcraft II installation directory.
+You have modified minigames used in this project on `mini_games\` folder. Copy this folder into your `Maps\` folder from your StarCraft II installation directory.
 The default installation directories are:
 * Windows: `C:\Program Files (x86)\StarCraft II\`
 * Mac: `/Applications/StarCraft II/`
